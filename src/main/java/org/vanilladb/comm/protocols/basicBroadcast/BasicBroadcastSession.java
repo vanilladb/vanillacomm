@@ -73,8 +73,6 @@ public class BasicBroadcastSession extends Session {
 
 	/**
 	 * Handles incoming events.
-	 * 
-	 * @see appia.Session#handle(appia.Event)
 	 */
 	public void handle(Event event) {
 		// Init events. Channel Init is from Appia and ProcessInitEvent is to

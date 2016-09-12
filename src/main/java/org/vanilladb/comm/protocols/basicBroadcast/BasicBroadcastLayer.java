@@ -66,8 +66,6 @@ public class BasicBroadcastLayer extends Layer {
 
 	/**
 	 * Creates a new session to this protocol.
-	 * 
-	 * @see appia.Layer#createSession()
 	 */
 	public Session createSession() {
 		return new BasicBroadcastSession(this);

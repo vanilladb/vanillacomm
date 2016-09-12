@@ -81,13 +81,6 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 	private int leaderId = 0;
 	private long tomTime = 0;
 
-	/**
-	 * 
-	 * @param role
-	 * @param selfId
-	 * @param rr
-	 * @param cr
-	 */
 	public ServerAppl(int selfId,
 			ServerTotalOrderedMessageListener svTomListener,
 			ServerP2pMessageListener svP2pMListener,
@@ -194,7 +187,7 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 	 * Sends a total order message.
 	 * 
 	 * @param spcs
-	 *            the {@link TotalOrderedMessage} to be sent
+	 *            the TotalOrderedMessage to be sent
 	 */
 	public void sendTotalOrderRequest(Object[] spcs) {
 		TotalOrderMessage tom = new TotalOrderMessage(spcs);

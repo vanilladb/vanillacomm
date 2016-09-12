@@ -63,13 +63,6 @@ public class ClientAppl extends Thread implements P2pMessageListener,
 	private ClientP2pMessageListener cP2pMListener;
 	private ClientNodeFailListener nfListener;
 
-	/**
-	 * 
-	 * @param role
-	 * @param selfId
-	 * @param respListener
-	 * @param nfListener
-	 */
 	public ClientAppl(int selfId, ClientP2pMessageListener cP2pMListener,
 			ClientNodeFailListener nfListener) {
 

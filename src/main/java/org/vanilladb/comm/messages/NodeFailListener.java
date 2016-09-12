@@ -25,14 +25,5 @@ import net.sf.appia.core.Channel;
  */
 public interface NodeFailListener {
 
-	/**
-	 * 
-	 * @param id
-	 *            the failed node id
-	 * @param group
-	 *            the group of the failed node
-	 * @param channel
-	 *            the channel the crash event delivered from
-	 */
 	public void onNodeFail(int id, ChannelType channelType, Channel c);
 }

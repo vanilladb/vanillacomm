@@ -36,8 +36,7 @@ public class P2pMessage implements Serializable {
 	 * @param receiver
 	 *            the receiver node id
 	 * @param group
-	 *            the group the receiver belongs to, {@link CLIENT} or
-	 *            {@link SERVER}
+	 *            the group the receiver belongs to, clients or servers
 	 */
 	public P2pMessage(Object message, int receiver, ChannelType group) {
 		this.message = message;

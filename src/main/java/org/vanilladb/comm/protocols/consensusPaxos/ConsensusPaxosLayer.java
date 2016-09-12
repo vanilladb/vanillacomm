@@ -80,9 +80,6 @@ public class ConsensusPaxosLayer extends Layer {
 
 	}
 
-	/**
-	 * @see appia.Layer#createSession()
-	 */
 	public Session createSession() {
 		return new BasicPaxosConsensusSession(this);
 	}

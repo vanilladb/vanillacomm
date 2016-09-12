@@ -67,8 +67,6 @@ public class ServerClientApplLayer extends Layer {
 
 	/**
 	 * Creates a new session to this protocol.
-	 * 
-	 * @see appia.Layer#createSession()
 	 */
 	public Session createSession() {
 		return new ServerClientApplSession(this);

@@ -74,9 +74,6 @@ public class FloodingConsensusSession extends Session {
 
     private HashSet<Proposal>[] proposal_set = null;
 
-    /**
-     * @see appia.Session#handle(appia.Event)
-     */
     public void handle(Event event) {
         if (event instanceof ProcessInitEvent)
             handleProcessInit((ProcessInitEvent) event);

@@ -73,9 +73,6 @@ public class ConsensusUTOLayer extends Layer {
 
     }
 
-    /**
-     * @see appia.Layer#createSession()
-     */
     public Session createSession() {
         return new ConsensusUTOSession(this);
     }

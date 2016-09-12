@@ -71,9 +71,6 @@ public class ZabAcceptLayer extends Layer {
 				Nack.class, Write.class, WriteAck.class, Crash.class };
 	}
 
-	/**
-	 * @see appia.Layer#createSession()
-	 */
 	public Session createSession() {
 		return new ZabAcceptSession(this);
 	}

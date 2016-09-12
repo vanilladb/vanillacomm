@@ -65,9 +65,6 @@ public class UniformFloodingConsensusLayer extends Layer {
         evAccept[3] = MySetEvent.class;
     }
 
-    /**
-     * @see appia.Layer#createSession()
-     */
     public Session createSession() {
         return new UniformFloodingConsensusSession(this);
     }

@@ -70,9 +70,6 @@ public class FloodingConsensusLayer extends Layer {
         evAccept[4] = DecidedEvent.class;
     }
 
-    /**
-     * @see appia.Layer#createSession()
-     */
     public Session createSession() {
         return new FloodingConsensusSession(this);
     }
