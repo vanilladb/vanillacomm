@@ -17,21 +17,27 @@ You will need the following tools to compile and run this project:
 
 TBA
 
-## Architecture Tutorials
+## Tutorials
 
-We have a series of educational slides to make the people who are not familiar with database internal architecture understand how a database works. Here is the outline of the our slides:
+Group Communication is to provide multipoint to multipoint communication. There are some challenges in group communication:
 
-- Getting started (TBA)
+- Message delay or loss
+- Node Failure
+- Link Failure
+
+We provide a series of tutorials to identify the difficulties of group communication and how to solve these problem:
+
+- Getting Started (TBA)
   - Configurations, applications, etc.
-- Appia (TBA)
+- [Appia](http://www.vanilladb.org/slides/comm/Appia.pdf)
   - Layers, sessions, Qos, channel, etc.
-- Basic abstraction (TBA)
+- [Basic Abstraction](http://www.vanilladb.org/slides/comm/Basic_Abstraction.pdf)
   - Perfect point-to-point link, perfect failure detection, etc.
-- Reliable Broadcast (TBA)
+- [Reliable Broadcast](http://www.vanilladb.org/slides/comm/Reliable_Broadcast.pdf)
   - Best-effort broadcast, reliable broadcast, uniform reliable broadcast, etc.
-- Consensus (TBA)
+- [Consensus](http://www.vanilladb.org/slides/comm/Consensus.pdf)
   - Flooding consensus, sequencer-based consensus, Paxos, etc.
-- Total-ordering (TBA)
+- [Total-ordering](http://www.vanilladb.org/slides/comm/Total_Ordering.pdf)
   - Consensus-based total-ordering, Zab, etc.
 
 ## Linking via Maven
