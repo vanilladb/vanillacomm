@@ -81,20 +81,16 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 	private int leaderId = 0;
 	private long tomTime = 0;
 
-	public ServerAppl(int selfId,
-			ServerTotalOrderedMessageListener svTomListener,
-			ServerP2pMessageListener svP2pMListener,
-			ServerNodeFailListener nfListener) {
+	public ServerAppl(int selfId, ServerTotalOrderedMessageListener svTomListener,
+			ServerP2pMessageListener svP2pMListener, ServerNodeFailListener nfListener) {
 
 		this.selfId = selfId;
 		this.svTomListener = svTomListener;
 		this.svP2pMListener = svP2pMListener;
 		this.nfListener = nfListener;
 
-		if (svTomListener == null || svP2pMListener == null
-				|| nfListener == null) {
-			throw new IllegalArgumentException(
-					"Must implement RequestListener, TupleSetListener and NodeFailListener");
+		if (svTomListener == null || svP2pMListener == null || nfListener == null) {
+			throw new IllegalArgumentException("Must implement RequestListener, TupleSetListener and NodeFailListener");
 		}
 
 		// read config file
@@ -120,10 +116,8 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 		this.serverView = prop;
 		prop = System.getProperty(ClientAppl.class.getName() + ".CLIENT_VIEW");
 		this.clientView = prop;
-		prop = System.getProperty(ServerAppl.class.getName()
-				+ ".STAND_ALONE_SEQUENCER");
-		IS_STANDALONE_SEQUENCER = (prop != null ? Boolean.parseBoolean(prop)
-				: false);
+		prop = System.getProperty(ServerAppl.class.getName() + ".STAND_ALONE_SEQUENCER");
+		IS_STANDALONE_SEQUENCER = (prop != null ? Boolean.parseBoolean(prop) : false);
 
 	}
 
@@ -146,32 +140,27 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 			zabChannel.start();
 			this.serverChannels = new Channel[dbServerProcessSet.getSize()];
 			for (int i = 0; i < dbServerProcessSet.getSize(); ++i) {
-				this.serverChannels[i] = getServersChannel(
-						this.dbServerProcessSet, i);
+				this.serverChannels[i] = getServersChannel(this.dbServerProcessSet, i);
 				// this.serverChannels[i].start();
 			}
 
 			this.clientChannels = new Channel[clientProcessSet.getSize()];
-			this.clientParticipatedProcessSets = new ProcessSet[clientProcessSet
-					.getSize()];
+			this.clientParticipatedProcessSets = new ProcessSet[clientProcessSet.getSize()];
 
 			clientParticipatedProcessSet = dbServerProcessSet.cloneProcessSet();
 			for (int i = 0; i < clientProcessSet.getSize(); ++i) {
 				ProcessSet ps = dbServerProcessSet.cloneProcessSet();
-				ps.addProcess(new SampleProcess(clientProcessSet.getProcess(i)
-						.getSocketAddress(), dbServerProcessSet.getSize(),
-						false), dbServerProcessSet.getSize());
+				ps.addProcess(new SampleProcess(clientProcessSet.getProcess(i).getSocketAddress(),
+						dbServerProcessSet.getSize(), false), dbServerProcessSet.getSize());
 				clientParticipatedProcessSets[i] = ps;
 				clientChannels[i] = getServerClientChannel(ps, i);
 				// clientChannels[i].start();
-				clientParticipatedProcessSet.addProcess(new SampleProcess(
-						clientProcessSet.getProcess(i).getSocketAddress(),
-						dbServerProcessSet.getSize() + i, false),
-						dbServerProcessSet.getSize() + i);
+				clientParticipatedProcessSet
+						.addProcess(new SampleProcess(clientProcessSet.getProcess(i).getSocketAddress(),
+								dbServerProcessSet.getSize() + i, false), dbServerProcessSet.getSize() + i);
 			}
 
-			clientChannel = getServerClientChannel(
-					clientParticipatedProcessSet, -1);
+			clientChannel = getServerClientChannel(clientParticipatedProcessSet, -1);
 			clientChannel.start();
 		} catch (AppiaDuplicatedSessionsException e) {
 			// TODO Auto-generated catch block
@@ -192,8 +181,7 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 	public void sendTotalOrderRequest(Object[] spcs) {
 		TotalOrderMessage tom = new TotalOrderMessage(spcs);
 		try {
-			ZabRequest ev = new ZabRequest(this.zabChannel, Direction.DOWN,
-					null, tom);
+			ZabRequest ev = new ZabRequest(this.zabChannel, Direction.DOWN, null, tom);
 			ev.asyncGo(this.zabChannel, Direction.DOWN);
 		} catch (AppiaEventException ex) {
 			ex.printStackTrace();
@@ -208,21 +196,20 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 	 */
 	public void sendP2pMessage(P2pMessage c) {
 		if (c.getGroup() == ChannelType.SERVER) {
-			if (Logger.getLogger(ServerAppl.class.getName()).isLoggable(
-					Level.FINE)) {
-				Logger.getLogger(ServerAppl.class.getName()).fine(
-						"Server " + selfId + " sends message to server "
-								+ c.getReceiver());
+			if (Logger.getLogger(ServerAppl.class.getName()).isLoggable(Level.FINE)) {
+				Logger.getLogger(ServerAppl.class.getName())
+						.fine("Server " + selfId + " sends message to server " + c.getReceiver());
 			}
 			// System.out.println("server send p2p to server " +
 			// c.getReceiver());
+			
+			if(c.isAsunc==true)
+				System.out.println("We get the message at appiia");
 			try {
 				SendableEvent ev = new SendableEvent();
 				ev.getMessage().pushObject(c);
-				ev.source = dbServerProcessSet.getSelfProcess()
-						.getSocketAddress();
-				ev.dest = dbServerProcessSet.getProcess(c.getReceiver())
-						.getSocketAddress();
+				ev.source = dbServerProcessSet.getSelfProcess().getSocketAddress();
+				ev.dest = dbServerProcessSet.getProcess(c.getReceiver()).getSocketAddress();
 				ev.setSourceSession(null);
 				// ev.asyncGo(this.serverChannels[c.getReceiver()],
 				// Direction.DOWN);
@@ -231,11 +218,9 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 				ex.printStackTrace();
 			}
 		} else {
-			if (Logger.getLogger(ServerAppl.class.getName()).isLoggable(
-					Level.FINE)) {
-				Logger.getLogger(ServerAppl.class.getName()).fine(
-						"Server " + selfId + " sends message to client "
-								+ c.getReceiver());
+			if (Logger.getLogger(ServerAppl.class.getName()).isLoggable(Level.FINE)) {
+				Logger.getLogger(ServerAppl.class.getName())
+						.fine("Server " + selfId + " sends message to client " + c.getReceiver());
 			}
 			try {
 				// System.out.println("server send p2p to client "
@@ -251,10 +236,8 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 				// ev.asyncGo(this.clientChannels[c.getReceiver()],
 				// Direction.DOWN);
 
-				ev.source = clientParticipatedProcessSet.getSelfProcess()
-						.getSocketAddress();
-				ev.dest = clientParticipatedProcessSet.getProcess(
-						dbServerProcessSet.getSize() + c.getReceiver())
+				ev.source = clientParticipatedProcessSet.getSelfProcess().getSocketAddress();
+				ev.dest = clientParticipatedProcessSet.getProcess(dbServerProcessSet.getSize() + c.getReceiver())
 						.getSocketAddress();
 				ev.setSourceSession(null);
 				ev.asyncGo(this.clientChannel, Direction.DOWN);
@@ -280,9 +263,11 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 
 	@Override
 	public void onRecvTotalOrderedMessage(TotalOrderMessage tom) {
+		/* Prevent seqencer get in to Total Order
 		if (IS_STANDALONE_SEQUENCER && this.selfId == leaderId) {
 			return;
 		}
+		*/
 		// long time = System.nanoTime();
 		// System.out.println("server recv tom " + (time - tomTime) +
 		// " tom size: " + tom.getMessages().length);
@@ -296,11 +281,10 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 		if (p2pm.getGroup() == ChannelType.SERVER) {
 			this.svP2pMListener.onRecvServerP2pMessage(p2pm);
 		} else if (p2pm.getGroup() == ChannelType.CLIENT) {
-			TotalOrderMessage tom = new TotalOrderMessage(
-					(Object[]) p2pm.getMessage());
+			//System.out.println("Receieve" + p2pm.getMessage());
+			TotalOrderMessage tom = new TotalOrderMessage((Object[]) p2pm.getMessage());
 			try {
-				ZabRequest ev = new ZabRequest(this.zabChannel, Direction.DOWN,
-						null, tom);
+				ZabRequest ev = new ZabRequest(this.zabChannel, Direction.DOWN, null, tom);
 				ev.go();
 			} catch (AppiaEventException ex) {
 				ex.printStackTrace();
@@ -317,6 +301,22 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 		nfListener.onNodeFail(id, channelType);
 	}
 
+	public void sendBroadcastRequest(Object[] request, boolean isAppiaTh) {
+		TotalOrderMessage tom = new TotalOrderMessage(request);
+		try {
+			ZabRequest ev = new ZabRequest(this.zabChannel, Direction.DOWN, null, tom);
+			// appia thread call go
+			// other thread call asyncgo
+			if (isAppiaTh)
+				ev.go();
+			else
+				ev.asyncGo(zabChannel, Direction.DOWN);
+			// ev.go();
+		} catch (AppiaEventException ex) {
+			ex.printStackTrace();
+		}
+	}
+
 	private ProcessSet buildProcessSet(String str, int selfProc) {
 		StringTokenizer st;
 		ProcessSet set = new ProcessSet();
@@ -326,17 +326,14 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 			try {
 				st = new StringTokenizer(m);
 				if (st.countTokens() != 3) {
-					Logger.getLogger(ServerAppl.class.getName()).severe(
-							"Wrong line in file: " + st.countTokens());
+					Logger.getLogger(ServerAppl.class.getName()).severe("Wrong line in file: " + st.countTokens());
 					continue;
 				}
 				int procNumber = Integer.parseInt(st.nextToken());
 				InetAddress addr = InetAddress.getByName(st.nextToken());
 				int portNumber = Integer.parseInt(st.nextToken());
 				boolean self = (procNumber == selfProc);
-				SampleProcess process = new SampleProcess(
-						new InetSocketAddress(addr, portNumber), procNumber,
-						self);
+				SampleProcess process = new SampleProcess(new InetSocketAddress(addr, portNumber), procNumber, self);
 				set.addProcess(process, procNumber);
 			} catch (IOException e) {
 
@@ -348,8 +345,8 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 
 	private Channel getZabChannel(ProcessSet processes) {
 		/* Create layers and put them on a array */
-		Layer[] qos = { new TcpCompleteLayer(), new TcpBasedPFDLayer(),
-				new BasicBroadcastLayer(), // new EagerRBLayer(),
+		Layer[] qos = { new TcpCompleteLayer(), new TcpBasedPFDLayer(), new BasicBroadcastLayer(), // new
+																									// EagerRBLayer(),
 				new ZabAcceptLayer(), new ZabTOBLayer(),
 
 				new ZabApplLayer() };
@@ -360,8 +357,7 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 			myQoS = new QoS("ZAB QoS", qos);
 		} catch (AppiaInvalidQoSException ex) {
 			Logger.getLogger(ServerAppl.class.getName()).severe("Invalid QoS");
-			Logger.getLogger(ServerAppl.class.getName())
-					.severe(ex.getMessage());
+			Logger.getLogger(ServerAppl.class.getName()).severe(ex.getMessage());
 			System.exit(1);
 		}
 		/* Create a channel. Uses default event scheduler. */
@@ -372,16 +368,13 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 		 * session is created and binded to the stack. Remaining ones are
 		 * created by default
 		 */
-		ZabApplSession sas = (ZabApplSession) qos[qos.length - 1]
-				.createSession();
+		ZabApplSession sas = (ZabApplSession) qos[qos.length - 1].createSession();
 		sas.init(processes, this, this, this);
 
 		ChannelCursor cc = channel.getCursor();
 
-		TcpCompleteSession tcpsession = (TcpCompleteSession) qos[0]
-				.createSession();
-		TcpBasedPFDSession tcppfdsession = (TcpBasedPFDSession) qos[1]
-				.createSession();
+		TcpCompleteSession tcpsession = (TcpCompleteSession) qos[0].createSession();
+		TcpBasedPFDSession tcppfdsession = (TcpBasedPFDSession) qos[1].createSession();
 
 		/*
 		 * Application is the last session of the array. Positioning in it is
@@ -395,8 +388,7 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 			cc.up();
 			cc.setSession(tcppfdsession);
 		} catch (AppiaCursorException ex) {
-			Logger.getLogger(ServerAppl.class.getName()).severe(
-					"Unexpected exception in main. Type code:" + ex.type);
+			Logger.getLogger(ServerAppl.class.getName()).severe("Unexpected exception in main. Type code:" + ex.type);
 			System.exit(1);
 		}
 
@@ -405,8 +397,8 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 
 	private Channel getServersChannel(ProcessSet processes, int id) {
 		/* Create layers and put them on a array */
-		Layer[] qos = { new TcpCompleteLayer(), new TcpBasedPFDLayer(),
-				new BasicBroadcastLayer(), // new EagerRBLayer(),
+		Layer[] qos = { new TcpCompleteLayer(), new TcpBasedPFDLayer(), new BasicBroadcastLayer(), // new
+																									// EagerRBLayer(),
 				new ServerClientApplLayer() };
 
 		/* Create a QoS */
@@ -415,21 +407,17 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 			myQoS = new QoS("ServerClient QoS for " + "server " + id, qos);
 		} catch (AppiaInvalidQoSException ex) {
 			Logger.getLogger(ServerAppl.class.getName()).severe("Invalid QoS");
-			Logger.getLogger(ServerAppl.class.getName())
-					.severe(ex.getMessage());
+			Logger.getLogger(ServerAppl.class.getName()).severe(ex.getMessage());
 			System.exit(1);
 		}
 		/* Create a channel. Uses default event scheduler. */
-		Channel channel = myQoS
-				.createUnboundChannel("ServerClient channel for " + "server "
-						+ id);
+		Channel channel = myQoS.createUnboundChannel("ServerClient channel for " + "server " + id);
 		/*
 		 * Application Session requires special arguments: filename and . A
 		 * session is created and binded to the stack. Remaining ones are
 		 * created by default
 		 */
-		ServerClientApplSession sas = (ServerClientApplSession) qos[qos.length - 1]
-				.createSession();
+		ServerClientApplSession sas = (ServerClientApplSession) qos[qos.length - 1].createSession();
 		sas.init(processes, this, this, this, false);
 
 		ChannelCursor cc = channel.getCursor();
@@ -449,8 +437,7 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 			cc.up();
 			cc.setSession(ccc.getSession());
 		} catch (AppiaCursorException ex) {
-			Logger.getLogger(ServerAppl.class.getName()).severe(
-					"Unexpected exception in main. Type code:" + ex.type);
+			Logger.getLogger(ServerAppl.class.getName()).severe("Unexpected exception in main. Type code:" + ex.type);
 			System.exit(1);
 		}
 		return channel;
@@ -468,21 +455,17 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 			myQoS = new QoS("ServerClient QoS for " + "client " + id, qos);
 		} catch (AppiaInvalidQoSException ex) {
 			Logger.getLogger(ServerAppl.class.getName()).severe("Invalid QoS");
-			Logger.getLogger(ServerAppl.class.getName())
-					.severe(ex.getMessage());
+			Logger.getLogger(ServerAppl.class.getName()).severe(ex.getMessage());
 			System.exit(1);
 		}
 		/* Create a channel. Uses default event scheduler. */
-		Channel channel = myQoS
-				.createUnboundChannel("ServerClient channel for " + "client "
-						+ id);
+		Channel channel = myQoS.createUnboundChannel("ServerClient channel for " + "client " + id);
 		/*
 		 * Application Session requires special arguments: filename and . A
 		 * session is created and binded to the stack. Remaining ones are
 		 * created by default
 		 */
-		ServerClientApplSession sas = (ServerClientApplSession) qos[qos.length - 1]
-				.createSession();
+		ServerClientApplSession sas = (ServerClientApplSession) qos[qos.length - 1].createSession();
 		sas.init(processes, this, this, false);
 
 		ChannelCursor cc = channel.getCursor();
@@ -502,8 +485,7 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 			cc.up();
 			cc.setSession(ccc.getSession());
 		} catch (AppiaCursorException ex) {
-			Logger.getLogger(ServerAppl.class.getName()).severe(
-					"Unexpected exception in main. Type code:" + ex.type);
+			Logger.getLogger(ServerAppl.class.getName()).severe("Unexpected exception in main. Type code:" + ex.type);
 			System.exit(1);
 		}
 		return channel;

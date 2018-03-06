@@ -28,6 +28,7 @@ public class P2pMessage implements Serializable {
 	private Object message;
 	private ChannelType group;
 	private int receiver;
+	public boolean isAsunc = false;
 
 	/**
 	 * 
@@ -67,4 +68,6 @@ public class P2pMessage implements Serializable {
 	public ChannelType getGroup() {
 		return group;
 	}
+	
+	
 }
