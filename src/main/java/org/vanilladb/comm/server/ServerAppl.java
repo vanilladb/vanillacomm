@@ -23,6 +23,27 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.vanilladb.comm.client.ClientAppl;
+import org.vanilladb.comm.messages.ChannelType;
+import org.vanilladb.comm.messages.NodeFailListener;
+import org.vanilladb.comm.messages.P2pMessage;
+import org.vanilladb.comm.messages.P2pMessageListener;
+import org.vanilladb.comm.messages.TotalOrderMessage;
+import org.vanilladb.comm.messages.TotalOrderedMessageListener;
+import org.vanilladb.comm.protocols.basicBroadcast.BasicBroadcastLayer;
+import org.vanilladb.comm.protocols.events.ZabRequest;
+import org.vanilladb.comm.protocols.serverClientAppl.ServerClientApplLayer;
+import org.vanilladb.comm.protocols.serverClientAppl.ServerClientApplSession;
+import org.vanilladb.comm.protocols.tcpBasedPFD.PFDStartEvent;
+import org.vanilladb.comm.protocols.tcpBasedPFD.TcpBasedPFDLayer;
+import org.vanilladb.comm.protocols.tcpBasedPFD.TcpBasedPFDSession;
+import org.vanilladb.comm.protocols.utils.ProcessSet;
+import org.vanilladb.comm.protocols.utils.SampleProcess;
+import org.vanilladb.comm.protocols.zabAccept.ZabAcceptLayer;
+import org.vanilladb.comm.protocols.zabAppl.ZabApplLayer;
+import org.vanilladb.comm.protocols.zabAppl.ZabApplSession;
+import org.vanilladb.comm.protocols.zabTotalOrder.ZabTOBLayer;
+
 import net.sf.appia.core.Appia;
 import net.sf.appia.core.AppiaCursorException;
 import net.sf.appia.core.AppiaDuplicatedSessionsException;
@@ -36,28 +57,6 @@ import net.sf.appia.core.QoS;
 import net.sf.appia.core.events.SendableEvent;
 import net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer;
 import net.sf.appia.protocols.tcpcomplete.TcpCompleteSession;
-
-import org.vanilladb.comm.client.ClientAppl;
-import org.vanilladb.comm.messages.ChannelType;
-import org.vanilladb.comm.messages.NodeFailListener;
-import org.vanilladb.comm.messages.P2pMessage;
-import org.vanilladb.comm.messages.P2pMessageListener;
-import org.vanilladb.comm.messages.TotalOrderMessage;
-import org.vanilladb.comm.messages.TotalOrderedMessageListener;
-import org.vanilladb.comm.protocols.basicBroadcast.BasicBroadcastLayer;
-import org.vanilladb.comm.protocols.events.BroadcastEvent;
-import org.vanilladb.comm.protocols.events.ZabRequest;
-import org.vanilladb.comm.protocols.serverClientAppl.ServerClientApplLayer;
-import org.vanilladb.comm.protocols.serverClientAppl.ServerClientApplSession;
-import org.vanilladb.comm.protocols.tcpBasedPFD.PFDStartEvent;
-import org.vanilladb.comm.protocols.tcpBasedPFD.TcpBasedPFDLayer;
-import org.vanilladb.comm.protocols.tcpBasedPFD.TcpBasedPFDSession;
-import org.vanilladb.comm.protocols.utils.ProcessSet;
-import org.vanilladb.comm.protocols.utils.SampleProcess;
-import org.vanilladb.comm.protocols.zabAccept.ZabAcceptLayer;
-import org.vanilladb.comm.protocols.zabAppl.ZabApplLayer;
-import org.vanilladb.comm.protocols.zabAppl.ZabApplSession;
-import org.vanilladb.comm.protocols.zabTotalOrder.ZabTOBLayer;
 
 public class ServerAppl extends Thread implements TotalOrderedMessageListener, P2pMessageListener, NodeFailListener {
 
@@ -190,11 +189,18 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 	 *            the TotalOrderedMessage to be sent
 	 */
 	public void sendTotalOrderRequest(Object[] spcs) {
+		sendTotalOrderRequest(spcs, false);
+	}
+	
+	public void sendTotalOrderRequest(Object[] spcs, boolean isAppiaThread) {
 		TotalOrderMessage tom = new TotalOrderMessage(spcs);
 		try {
 			ZabRequest ev = new ZabRequest(this.zabChannel, Direction.DOWN,
 					null, tom);
-			ev.asyncGo(this.zabChannel, Direction.DOWN);
+			if (isAppiaThread)
+				ev.go();
+			else
+				ev.asyncGo(zabChannel, Direction.DOWN);
 		} catch (AppiaEventException ex) {
 			ex.printStackTrace();
 		}
