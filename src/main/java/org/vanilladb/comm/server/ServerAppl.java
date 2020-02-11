@@ -19,6 +19,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -246,6 +247,14 @@ public class ServerAppl extends Thread implements TotalOrderedMessageListener, P
 				ex.printStackTrace();
 			}
 		}
+	}
+	
+	/*
+	 * pull source or dest address from this
+	 */
+	public SocketAddress getSocketAddress(int nodeId){
+		return clientParticipatedProcessSet.getProcess(dbServerProcessSet.getSize() + nodeId)
+				.getSocketAddress();
 	}
 
 	/**
