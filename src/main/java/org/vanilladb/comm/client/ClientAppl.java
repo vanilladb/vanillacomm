@@ -54,7 +54,8 @@ public class ClientAppl extends Thread implements P2pMessageListener,
 	private final boolean IS_STANDALONE_SEQUENCER;
 
 	private Channel clientChannel;
-	private String serverView, clientView;
+	private ProcessSet dbServerProcessSet;
+	private ProcessSet clientProcessSet;
 	private ProcessSet clientParticipatedProcessSet;
 
 	private int selfId;
@@ -94,31 +95,28 @@ public class ClientAppl extends Thread implements P2pMessageListener,
 				}
 			}
 		}
-		serverView = System.getProperty(ServerAppl.class.getName()
+		String serverView = System.getProperty(ServerAppl.class.getName()
 				+ ".SERVER_VIEW");
-		clientView = System.getProperty(ClientAppl.class.getName()
+		String clientView = System.getProperty(ClientAppl.class.getName()
 				+ ".CLIENT_VIEW");
+		dbServerProcessSet = buildProcessSet(serverView, selfId);
+		clientProcessSet = buildProcessSet(clientView, selfId);
 
 		prop = System.getProperty(ServerAppl.class.getName()
 				+ ".STAND_ALONE_SEQUENCER");
 		IS_STANDALONE_SEQUENCER = (prop != null ? Boolean.parseBoolean(prop)
 				: false);
-
-	}
-
-	@Override
-	public void run() {
-		ProcessSet dbServerProcessSet = buildProcessSet(serverView, selfId);
-		ProcessSet clientProcessSet = buildProcessSet(clientView, selfId);
-
-		// XXX
+		
 		// standalone leader
 		if (IS_STANDALONE_SEQUENCER) {
 			leaderId = dbServerProcessSet.getSize() - 1;
 		} else {
 			leaderId = 0;
 		}
+	}
 
+	@Override
+	public void run() {
 		ProcessSet ps = new ProcessSet();
 		for (int i = 0; i < dbServerProcessSet.getSize(); ++i) {
 			ps.addProcess(new SampleProcess(dbServerProcessSet.getProcess(i)
@@ -150,6 +148,12 @@ public class ClientAppl extends Thread implements P2pMessageListener,
 
 	public void sendRequest(Object[] req) {
 		P2pMessage p2pm = new P2pMessage(req, leaderId, ChannelType.CLIENT);
+		sendP2pMessage(p2pm);
+	}
+
+	public void sendMessageToClientNode(int clientId, Object message) {
+		int nodeId = dbServerProcessSet.getSize() + clientId;
+		P2pMessage p2pm = new P2pMessage(message, nodeId, ChannelType.CLIENT);
 		sendP2pMessage(p2pm);
 	}
 
@@ -208,6 +212,14 @@ public class ClientAppl extends Thread implements P2pMessageListener,
 		// System.out.println("client recv p2p");
 		this.cP2pMListener.onRecvClientP2pMessage(p2pm);
 
+	}
+	
+	public int getServerCount() {
+		return dbServerProcessSet.getSize();
+	}
+	
+	public int getClientCount() {
+		return clientProcessSet.getSize();
 	}
 
 	private ProcessSet buildProcessSet(String str, int selfProc) {
