@@ -46,7 +46,7 @@ We provide a series of tutorials to identify the difficulties of group communica
 <dependency>
   <groupId>org.vanilladb</groupId>
   <artifactId>comm</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 
@@ -56,6 +56,6 @@ If you have any question, you can either open an issue here or contact [vanillad
 
 ## License
 
-Copyright 2016 vanilladb.org contributors
+Copyright 2016-2020 vanilladb.org contributors
 
 Licensed under the [Apache License 2.0](LICENSE)
