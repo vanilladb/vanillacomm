@@ -55,6 +55,14 @@ public class VanillaCommClient implements P2pMessageListener, Runnable {
 	public void onRecvP2pMessage(int senderId, Serializable message) {
 		listener.onReceiveP2pMessage(ProcessView.toProcessType(senderId), ProcessView.toLocalId(senderId), message);
 	}
+	
+	public int getServerCount() {
+		return ProcessView.SERVER_COUNT;
+	}
+	
+	public int getClientCount() {
+		return ProcessView.CLIENT_COUNT;
+	}
 
 	private void setupP2pChannel(int globalSelfId) {
 		try {

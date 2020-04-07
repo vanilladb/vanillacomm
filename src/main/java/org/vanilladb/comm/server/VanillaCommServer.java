@@ -101,6 +101,14 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 			listener.onServerFailed(ProcessView.toLocalId(failedProcessId));
 	}
 	
+	public int getServerCount() {
+		return ProcessView.SERVER_COUNT;
+	}
+	
+	public int getClientCount() {
+		return ProcessView.CLIENT_COUNT;
+	}
+	
 	private TcpCompleteSession setupZabChannel(int globalSelfId) {
 		TcpCompleteSession tcpSession = null;
 		

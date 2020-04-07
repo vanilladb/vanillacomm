@@ -16,6 +16,8 @@ public class ProcessView {
 	
 	public static final ProcessList SERVER_LIST;
 	public static final ProcessList CLIENT_LIST;
+	public static final int SERVER_COUNT;
+	public static final int CLIENT_COUNT;
 	
 	static {
 		// read config file
@@ -44,6 +46,8 @@ public class ProcessView {
 		
 		SERVER_LIST = buildProcessList(serverListStr);
 		CLIENT_LIST = buildProcessList(clientListStr);
+		SERVER_COUNT = SERVER_LIST.getSize();
+		CLIENT_COUNT = CLIENT_LIST.getSize();
 	}
 	
 	public static int toGlobalId(ProcessType type, int id) {
