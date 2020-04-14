@@ -1,6 +1,8 @@
 package org.vanilladb.comm.protocols.zabproposal;
 
 import java.io.Serializable;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,6 +15,7 @@ import org.vanilladb.comm.protocols.zabelection.LeaderChanged;
 import org.vanilladb.comm.protocols.zabelection.LeaderInit;
 
 import net.sf.appia.core.AppiaEventException;
+import net.sf.appia.core.Channel;
 import net.sf.appia.core.Event;
 import net.sf.appia.core.Layer;
 import net.sf.appia.core.Session;
@@ -25,6 +28,10 @@ public class ZabProposalSession extends Session {
 	private int epochId = 0;
 	private int serialNumber = 0;
 	private Serializable cachedMessage;
+	
+	// For the leader
+	private boolean hasOngoingProposal;
+	private Queue<Serializable> messageQueue = new ArrayDeque<Serializable>();
 	
 	ZabProposalSession(Layer layer) {
 		super(layer);
@@ -88,7 +95,9 @@ public class ZabProposalSession extends Session {
 			logger.fine("Received TotalOrderRequest");
 		
 		if (processList.getSelfId() == leaderId) {
-			propose(event);
+			messageQueue.add(event.getCarriedMessage());
+			if (!hasOngoingProposal)
+				propose(event.getChannel());
 		} else {
 			redirectToLeader(event);
 		}
@@ -100,6 +109,8 @@ public class ZabProposalSession extends Session {
 			logger.fine(String.format("Received ZabPropose (epoch id: %d, serial #: %d)",
 					event.getEpochId(), event.getSerialNumber()));
 		
+		// Note that since the leader has advanced its serialNumber
+		// it will not cache its message here.
 		if (event.getEpochId() == epochId && event.getSerialNumber() > serialNumber) {
 			serialNumber = event.getSerialNumber();
 			cachedMessage = event.getCarriedMessage();
@@ -120,24 +131,36 @@ public class ZabProposalSession extends Session {
 			} catch (AppiaEventException e) {
 				e.printStackTrace();
 			}
+			
+			if (processList.getSelfId() == leaderId) {
+				hasOngoingProposal = false;
+				if (!messageQueue.isEmpty())
+					propose(event.getChannel());
+			}
 		}
 	}
 	
-	private void propose(TotalOrderRequest request) {
+	private void propose(Channel channel) {
+		Serializable message = messageQueue.poll();
+		if (message == null)
+			return;
+
 		if (logger.isLoggable(Level.FINE))
 			logger.fine(String.format("Leader proposes (epoch id: %d, serial #: %d)",
 					epochId, serialNumber + 1));
 		
 		try {
 			serialNumber++;
-			ZabPropose propose = new ZabPropose(request.getChannel(), this,
-					epochId, serialNumber, request.getCarriedMessage());
+			ZabPropose propose = new ZabPropose(channel, this,
+					epochId, serialNumber, message);
 			
 			// Cache the message
-			cachedMessage = request.getCarriedMessage();
+			cachedMessage = message;
 			
 			propose.init();
 			propose.go();
+			
+			hasOngoingProposal = true;
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		}
