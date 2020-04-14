@@ -1,6 +1,8 @@
 package org.vanilladb.comm.protocols.zabproposal;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.vanilladb.comm.protocols.beb.Broadcast;
 
@@ -15,7 +17,7 @@ public class ZabPropose extends Broadcast {
 	
 	private int epochId;
 	private int serialNumber;
-	private Serializable message;
+	private List<Serializable> messages;
 	
 	// We must provide a public constructor for TcpCompleteSession
 	// in order to reconstruct this on the other side
@@ -25,19 +27,21 @@ public class ZabPropose extends Broadcast {
 	}
 	
 	public ZabPropose(Channel channel, Session source, int epochId,
-			int serialNumber, Serializable message)
+			int serialNumber, List<Serializable> messages)
 			throws AppiaEventException {
 		super(channel, Direction.DOWN, source);
 		this.epochId = epochId;
 		this.serialNumber = serialNumber;
-		this.message = message;
+		this.messages = messages;
 		this.isInitailized = true;
 		
 		// Push the data to the message buffer in order to send
 		// through network
 		getMessage().pushInt(epochId);
 		getMessage().pushInt(serialNumber);
-		getMessage().pushObject(message);
+		for (int i = messages.size() - 1; i >= 0; i--) 
+			getMessage().pushObject(messages.get(i));
+		getMessage().pushInt(messages.size());
 	}
 	
 	public int getEpochId() {
@@ -52,16 +56,19 @@ public class ZabPropose extends Broadcast {
 		return serialNumber;
 	}
 	
-	public Serializable getCarriedMessage() {
+	public List<Serializable> getCarriedMessages() {
 		if (!isInitailized)
 			recoverData();
-		return message;
+		return messages;
 	}
 	
 	private void recoverData() {
 		// The data must be recovered from the message buffer
 		// after it is sent through the network.
-		message = (Serializable) getMessage().popObject();
+		int messageCount = getMessage().popInt();
+		messages = new ArrayList<Serializable>(messageCount);
+		for (int i = 0; i < messageCount; i++)
+			messages.add((Serializable) getMessage().popObject());
 		serialNumber = getMessage().popInt();
 		epochId = getMessage().popInt();
 		isInitailized = true;

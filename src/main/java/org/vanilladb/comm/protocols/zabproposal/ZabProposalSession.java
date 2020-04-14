@@ -2,6 +2,8 @@ package org.vanilladb.comm.protocols.zabproposal;
 
 import java.io.Serializable;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,7 +29,7 @@ public class ZabProposalSession extends Session {
 	private int leaderId;
 	private int epochId = 0;
 	private int serialNumber = 0;
-	private Serializable cachedMessage;
+	private List<Serializable> cachedMessages;
 	
 	// For the leader
 	private boolean hasOngoingProposal;
@@ -113,7 +115,7 @@ public class ZabProposalSession extends Session {
 		// it will not cache its message here.
 		if (event.getEpochId() == epochId && event.getSerialNumber() > serialNumber) {
 			serialNumber = event.getSerialNumber();
-			cachedMessage = event.getCarriedMessage();
+			cachedMessages = event.getCarriedMessages();
 		}
 	}
 	
@@ -124,10 +126,12 @@ public class ZabProposalSession extends Session {
 		
 		if (event.getEpochId() == epochId && event.getSerialNumber() == serialNumber) {
 			try {
-				TotalOrderMessage message = new TotalOrderMessage(event.getChannel(),
-						this, cachedMessage, serialNumber);
-				message.init();
-				message.go();
+				for (Serializable cachedMessage : cachedMessages) {
+					TotalOrderMessage message = new TotalOrderMessage(event.getChannel(),
+							this, cachedMessage, serialNumber);
+					message.init();
+					message.go();
+				}
 			} catch (AppiaEventException e) {
 				e.printStackTrace();
 			}
@@ -141,8 +145,15 @@ public class ZabProposalSession extends Session {
 	}
 	
 	private void propose(Channel channel) {
+		// Build a message list
+		List<Serializable> messageList = new ArrayList<Serializable>();
 		Serializable message = messageQueue.poll();
-		if (message == null)
+		while (message != null) {
+			messageList.add(message);
+			message = messageQueue.poll();
+		}
+		
+		if (messageList.isEmpty())
 			return;
 
 		if (logger.isLoggable(Level.FINE))
@@ -152,10 +163,10 @@ public class ZabProposalSession extends Session {
 		try {
 			serialNumber++;
 			ZabPropose propose = new ZabPropose(channel, this,
-					epochId, serialNumber, message);
+					epochId, serialNumber, messageList);
 			
 			// Cache the message
-			cachedMessage = message;
+			cachedMessages = messageList;
 			
 			propose.init();
 			propose.go();
