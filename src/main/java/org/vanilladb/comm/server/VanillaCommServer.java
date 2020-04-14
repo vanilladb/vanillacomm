@@ -10,6 +10,7 @@ import org.vanilladb.comm.protocols.beb.BestEffortBroadcastLayer;
 import org.vanilladb.comm.protocols.p2pappl.P2pApplicationLayer;
 import org.vanilladb.comm.protocols.p2pappl.P2pMessage;
 import org.vanilladb.comm.protocols.p2pappl.P2pMessageListener;
+import org.vanilladb.comm.protocols.p2pcounting.P2pCountingLayer;
 import org.vanilladb.comm.protocols.tcpfd.TcpFailureDetectionLayer;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderApplicationLayer;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderMessageListener;
@@ -116,6 +117,7 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 			ProcessList processList = ProcessView.buildServersProcessList(globalSelfId);
 			Layer[] layers = new Layer[] {
 				new TcpCompleteLayer(),
+//				new P2pCountingLayer(),
 				new TcpFailureDetectionLayer(),
 				new BestEffortBroadcastLayer(),
 				new ZabElectionLayer(),
