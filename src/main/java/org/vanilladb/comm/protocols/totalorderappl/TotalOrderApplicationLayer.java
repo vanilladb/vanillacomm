@@ -46,7 +46,7 @@ public class TotalOrderApplicationLayer extends Layer {
 			AllProcessesReady.class,
 			RegisterSocketEvent.class,
 			FailureDetected.class,
-			TotalOrderMessage.class
+			TotalOrderMessages.class
 		};
 	}
 

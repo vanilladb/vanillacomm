@@ -1,5 +1,7 @@
 package org.vanilladb.comm.protocols.totalorderappl;
 
+import java.io.Serializable;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,8 +50,8 @@ public class TotalOrderApplicationSession extends Session {
 			handleRegisterSocketEvent((RegisterSocketEvent) event);
 		else if (event instanceof FailureDetected)
 			handleFailureDetected((FailureDetected) event);
-		else if (event instanceof TotalOrderMessage)
-			handleTotalOrderMessage((TotalOrderMessage) event);
+		else if (event instanceof TotalOrderMessages)
+			handleTotalOrderMessage((TotalOrderMessages) event);
 	}
 	
 	private void handleChannelInit(ChannelInit init) {
@@ -123,13 +125,16 @@ public class TotalOrderApplicationSession extends Session {
 		procListener.onProcessFailed(event.getFailedProcessId());
 	}
 	
-	private void handleTotalOrderMessage(TotalOrderMessage event) {
+	private void handleTotalOrderMessage(TotalOrderMessages event) {
 		if (logger.isLoggable(Level.FINE))
-			logger.fine("Received TotalOrderMessage (serial number: " +
-					event.getSerialNumber() + ")");
-		
+			logger.fine(String.format("Received TotalOrderMessage (serial number start at: %d, length: %d)",
+					event.getMessageSerialNumberStart(), event.getMessages().size()));
+			
 		// Notify the listener
-		totalMsgListener.onRecvTotalOrderMessage(event.getSerialNumber(),
-				event.getMessage());
+		int startId = event.getMessageSerialNumberStart();
+		List<Serializable> messages = event.getMessages();
+		for (int id = 0; id < messages.size(); id++) {
+			totalMsgListener.onRecvTotalOrderMessage(startId + id, messages.get(id));
+		}
 	}
 }

@@ -1,7 +1,7 @@
 package org.vanilladb.comm.protocols.zabproposal;
 
 import org.vanilladb.comm.protocols.events.ProcessListInit;
-import org.vanilladb.comm.protocols.totalorderappl.TotalOrderMessage;
+import org.vanilladb.comm.protocols.totalorderappl.TotalOrderMessages;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderRequest;
 import org.vanilladb.comm.protocols.zabacceptance.ZabCommit;
 import org.vanilladb.comm.protocols.zabelection.LeaderChanged;
@@ -16,7 +16,7 @@ public class ZabProposalLayer extends Layer {
 		// Events that the protocol will create
 		evProvide = new Class[] {
 			ZabPropose.class,
-			TotalOrderMessage.class
+			TotalOrderMessages.class
 		};
 		
 		// Events that the protocol requires to work

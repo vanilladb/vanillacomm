@@ -123,8 +123,8 @@ public class ZabAcceptanceSession extends Session {
 		try {
 			if (event.getDir() == Direction.DOWN) { // Leader
 				if (logger.isLoggable(Level.FINE))
-					logger.fine(String.format("Received ZabPropose from application (epoch id: %d, serial #: %d)",
-							event.getEpochId(), event.getSerialNumber()));
+					logger.fine(String.format("Received ZabPropose from application (epoch id: %d, proposal serial #: %d)",
+							event.getEpochId(), event.getProposalSerialNumber()));
 				
 				// Reset voting
 				voteCount = 0; // Leader has a vote
@@ -137,38 +137,38 @@ public class ZabAcceptanceSession extends Session {
 				event.go();
 			} else { // Broadcast messages from network
 				if (logger.isLoggable(Level.FINE))
-					logger.fine(String.format("Received ZabPropose from network (epoch id: %d, serial #: %d)",
-							event.getEpochId(), event.getSerialNumber()));
+					logger.fine(String.format("Received ZabPropose from network (epoch id: %d, proposal serial #: %d)",
+							event.getEpochId(), event.getProposalSerialNumber()));
 				
-				if (event.getEpochId() == epochId && event.getSerialNumber() > serialNumber) {
-					serialNumber = event.getSerialNumber();
+				if (event.getEpochId() == epochId && event.getProposalSerialNumber() > serialNumber) {
+					serialNumber = event.getProposalSerialNumber();
 					
 					// Let the event go continue going UP for caching the message
 					event.go();
 					
 					// Accept the proposal
 					ZabAccept accept = new ZabAccept(event.getChannel(), this,
-							event.getEpochId(), event.getSerialNumber());
+							event.getEpochId(), event.getProposalSerialNumber());
 					accept.source = processList.getSelfProcess().getAddress();
 					accept.dest = event.source;
 					accept.init();
 					accept.go();
 
 					if (logger.isLoggable(Level.FINE))
-						logger.fine(String.format("Accept proposal (epoch id: %d, serial #: %d)",
-								event.getEpochId(), event.getSerialNumber()));
+						logger.fine(String.format("Accept proposal (epoch id: %d, proposal serial #: %d)",
+								event.getEpochId(), event.getProposalSerialNumber()));
 				} else {
 					// Deny the proposal
 					ZabDeny deny = new ZabDeny(event.getChannel(), this,
-							event.getEpochId(), event.getSerialNumber());
+							event.getEpochId(), event.getProposalSerialNumber());
 					deny.source = processList.getSelfProcess().getAddress();
 					deny.dest = event.source;
 					deny.init();
 					deny.go();
 
 					if (logger.isLoggable(Level.FINE))
-						logger.fine(String.format("Deny proposal (epoch id: %d, serial #: %d)",
-								event.getEpochId(), event.getSerialNumber()));
+						logger.fine(String.format("Deny proposal (epoch id: %d, proposal serial #: %d)",
+								event.getEpochId(), event.getProposalSerialNumber()));
 				}
 			}
 		} catch (AppiaEventException e) {
@@ -179,7 +179,7 @@ public class ZabAcceptanceSession extends Session {
 	// Leader's method
 	private void handleZabAccept(ZabAccept event) {
 		if (logger.isLoggable(Level.FINE))
-			logger.fine(String.format("Received ZabAccept from %s (epoch id: %d, serial #: %d, vote #: %d)",
+			logger.fine(String.format("Received ZabAccept from %s (epoch id: %d, proposal serial #: %d, vote #: %d)",
 					event.source, event.getEpochId(), event.getSerialNumber(), voteCount));
 		
 		if (event.getEpochId() == epochId && event.getSerialNumber() == serialNumber) {
@@ -193,7 +193,7 @@ public class ZabAcceptanceSession extends Session {
 	// Leader's method
 	private void handleZabDeny(ZabDeny event) {
 		if (logger.isLoggable(Level.WARNING))
-			logger.warning(String.format("Received ZabDeny from %s (epoch id: %d, serial #: %d, vote #: %d)",
+			logger.warning(String.format("Received ZabDeny from %s (epoch id: %d, proposal serial #: %d, vote #: %d)",
 					event.source, event.getEpochId(), event.getSerialNumber(), voteCount));
 		
 		// TODO: Retry with higher number?
@@ -201,7 +201,7 @@ public class ZabAcceptanceSession extends Session {
 	
 	private void commit(Channel chennel) {
 		if (logger.isLoggable(Level.FINE))
-			logger.fine(String.format("Commit the message (epoch id: %d, serial #: %d, vote #: %d)",
+			logger.fine(String.format("Commit the message (epoch id: %d, proposal serial #: %d, vote #: %d)",
 					epochId, serialNumber, voteCount));
 		
 		try {

@@ -1,6 +1,8 @@
 package org.vanilladb.comm.server;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -69,7 +71,18 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 	
 	public void sendTotalOrderMessage(Serializable message) {
 		try {
-			TotalOrderRequest total = new TotalOrderRequest(message);
+			List<Serializable> messages = new ArrayList<Serializable>();
+			messages.add(message);
+			TotalOrderRequest total = new TotalOrderRequest(messages);
+			total.asyncGo(zabChannel, Direction.DOWN);
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void sendTotalOrderMessages(List<Serializable> messages) {
+		try {
+			TotalOrderRequest total = new TotalOrderRequest(messages);
 			total.asyncGo(zabChannel, Direction.DOWN);
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
@@ -117,7 +130,7 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 			ProcessList processList = ProcessView.buildServersProcessList(globalSelfId);
 			Layer[] layers = new Layer[] {
 				new TcpCompleteLayer(),
-//				new P2pCountingLayer(),
+				new P2pCountingLayer(),
 				new TcpFailureDetectionLayer(),
 				new BestEffortBroadcastLayer(),
 				new ZabElectionLayer(),

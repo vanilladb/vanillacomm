@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 
 import org.vanilladb.comm.process.ProcessList;
 import org.vanilladb.comm.protocols.events.ProcessListInit;
-import org.vanilladb.comm.protocols.totalorderappl.TotalOrderMessage;
+import org.vanilladb.comm.protocols.totalorderappl.TotalOrderMessages;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderRequest;
 import org.vanilladb.comm.protocols.zabacceptance.ZabCommit;
 import org.vanilladb.comm.protocols.zabelection.LeaderChanged;
@@ -28,7 +28,8 @@ public class ZabProposalSession extends Session {
 	private ProcessList processList;
 	private int leaderId;
 	private int epochId = 0;
-	private int serialNumber = 0;
+	private int currentPoposalSerialNumber = 0;
+	private int currentMessageSerialNumberStart = 1;
 	private List<Serializable> cachedMessages;
 	
 	// For the leader
@@ -97,7 +98,7 @@ public class ZabProposalSession extends Session {
 			logger.fine("Received TotalOrderRequest");
 		
 		if (processList.getSelfId() == leaderId) {
-			messageQueue.add(event.getCarriedMessage());
+			messageQueue.addAll(event.getCarriedMessages());
 			if (!hasOngoingProposal)
 				propose(event.getChannel());
 		} else {
@@ -108,13 +109,14 @@ public class ZabProposalSession extends Session {
 	// For caching the message
 	private void handleZabPropose(ZabPropose event) {
 		if (logger.isLoggable(Level.FINE))
-			logger.fine(String.format("Received ZabPropose (epoch id: %d, serial #: %d)",
-					event.getEpochId(), event.getSerialNumber()));
+			logger.fine(String.format("Received ZabPropose (epoch id: %d, proposal serial #: %d)",
+					event.getEpochId(), event.getProposalSerialNumber()));
 		
 		// Note that since the leader has advanced its serialNumber
 		// it will not cache its message here.
-		if (event.getEpochId() == epochId && event.getSerialNumber() > serialNumber) {
-			serialNumber = event.getSerialNumber();
+		if (event.getEpochId() == epochId && event.getProposalSerialNumber() > currentPoposalSerialNumber) {
+			currentPoposalSerialNumber = event.getProposalSerialNumber();
+			currentMessageSerialNumberStart = event.getMessageSerialNumberStart();
 			cachedMessages = event.getCarriedMessages();
 		}
 	}
@@ -124,19 +126,20 @@ public class ZabProposalSession extends Session {
 			logger.fine(String.format("Received ZabCommit (epoch id: %d, serial #: %d)",
 					event.getEpochId(), event.getSerialNumber()));
 		
-		if (event.getEpochId() == epochId && event.getSerialNumber() == serialNumber) {
+		if (event.getEpochId() == epochId && event.getSerialNumber() == currentPoposalSerialNumber) {
 			try {
-				for (Serializable cachedMessage : cachedMessages) {
-					TotalOrderMessage message = new TotalOrderMessage(event.getChannel(),
-							this, cachedMessage, serialNumber);
-					message.init();
-					message.go();
-				}
+				TotalOrderMessages messages = new TotalOrderMessages(event.getChannel(),
+						this, cachedMessages, currentMessageSerialNumberStart);
+				messages.init();
+				messages.go();
 			} catch (AppiaEventException e) {
 				e.printStackTrace();
 			}
 			
 			if (processList.getSelfId() == leaderId) {
+				// Advance the serial number
+				currentMessageSerialNumberStart += cachedMessages.size();
+				
 				hasOngoingProposal = false;
 				if (!messageQueue.isEmpty())
 					propose(event.getChannel());
@@ -158,12 +161,12 @@ public class ZabProposalSession extends Session {
 
 		if (logger.isLoggable(Level.FINE))
 			logger.fine(String.format("Leader proposes (epoch id: %d, serial #: %d)",
-					epochId, serialNumber + 1));
+					epochId, currentPoposalSerialNumber + 1));
 		
 		try {
-			serialNumber++;
+			currentPoposalSerialNumber++;
 			ZabPropose propose = new ZabPropose(channel, this,
-					epochId, serialNumber, messageList);
+					epochId, currentPoposalSerialNumber, currentMessageSerialNumberStart, messageList);
 			
 			// Cache the message
 			cachedMessages = messageList;
