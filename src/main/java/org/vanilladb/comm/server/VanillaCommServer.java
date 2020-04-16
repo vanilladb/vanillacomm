@@ -130,7 +130,7 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 			ProcessList processList = ProcessView.buildServersProcessList(globalSelfId);
 			Layer[] layers = new Layer[] {
 				new TcpCompleteLayer(),
-				new P2pCountingLayer(),
+//				new P2pCountingLayer(),
 				new TcpFailureDetectionLayer(),
 				new BestEffortBroadcastLayer(),
 				new ZabElectionLayer(),
