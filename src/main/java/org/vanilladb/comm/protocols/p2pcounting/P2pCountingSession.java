@@ -22,6 +22,7 @@ public class P2pCountingSession extends Session {
 	private ProcessList processList;
 	private Map<SocketAddress, AtomicInteger> froms = new ConcurrentHashMap<SocketAddress, AtomicInteger>();
 	private Map<SocketAddress, AtomicInteger> tos = new ConcurrentHashMap<SocketAddress, AtomicInteger>();
+	private Map<String, AtomicInteger> types = new ConcurrentHashMap<String, AtomicInteger>();
 	
 	P2pCountingSession(Layer layer) {
 		super(layer);
@@ -49,6 +50,9 @@ public class P2pCountingSession extends Session {
 							SocketAddress addr = processList.getProcess(i).getAddress();
 							sb.append(String.format("From server %d: %d\n", i, froms.get(addr).getAndSet(0)));
 							sb.append(String.format("To server %d: %d\n", i, tos.get(addr).getAndSet(0)));
+						}
+						for (String name : types.keySet()) {
+							sb.append(String.format("Count for %s: %d\n", name, types.get(name).getAndSet(0)));
 						}
 						
 						sb.append("===================================\n");
@@ -102,6 +106,15 @@ public class P2pCountingSession extends Session {
 			AtomicInteger count = tos.getOrDefault(to, new AtomicInteger());
 			count.incrementAndGet();
 		}
+		
+		// Record the type
+		String name = event.getClass().getSimpleName();
+		AtomicInteger count = types.get(name);
+		if (count == null) {
+			count = new AtomicInteger(0);
+			types.put(name, count);
+		}
+		count.incrementAndGet();
 		
 		// Let the event continue
 		try {
