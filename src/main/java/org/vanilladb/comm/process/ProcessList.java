@@ -35,8 +35,10 @@ package org.vanilladb.comm.process;
 import java.io.Serializable;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -68,14 +70,16 @@ public class ProcessList implements Serializable {
 
     private CommProcess[] processes;
     private int selfId = -1;
+    private Map<SocketAddress, Integer> addressToId = new HashMap<SocketAddress, Integer>();
     
     private ProcessList(CommProcess[] processes) {
         this.processes = processes;
         for (CommProcess process : processes) {
+        	// Find self
         	if (process.isSelf()) {
         		selfId = process.getId();
-        		break;
         	}
+        	addressToId.put(process.getAddress(), process.getId());
         }
     }
 
@@ -88,6 +92,7 @@ public class ProcessList implements Serializable {
         for (int i = 0; i < targets.length; i++)
         	processes[i] = new CommProcess(targets[i]);
         selfId = processList.selfId;
+        addressToId = new HashMap<SocketAddress, Integer>(processList.addressToId);
     }
 
     /**
@@ -107,11 +112,10 @@ public class ProcessList implements Serializable {
      * @return the id of the process
      */
     public int getId(SocketAddress addr) {
-    	for (CommProcess process : processes) {
-    		if (process.getAddress().equals(addr))
-    			return process.getId();
-    	}
-    	return -1;
+    	Integer id = addressToId.get(addr);
+    	if (id == null)
+    		return -1;
+    	return id;
     }
 
     /**
