@@ -4,6 +4,7 @@ import org.vanilladb.comm.process.ProcessList;
 
 import net.sf.appia.core.Layer;
 import net.sf.appia.core.Session;
+import net.sf.appia.core.events.SendableEvent;
 import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.protocols.common.RegisterSocketEvent;
 import net.sf.appia.protocols.tcpcomplete.TcpUndeliveredEvent;
@@ -23,7 +24,8 @@ public class P2pApplicationLayer extends Layer {
 		// Events that the protocol will create
 		evProvide = new Class[] {
 			RegisterSocketEvent.class,
-			P2pMessage.class
+			P2pMessage.class,
+			SendableEvent.class,
 		};
 		
 		// Events that the protocol requires to work
@@ -37,6 +39,7 @@ public class P2pApplicationLayer extends Layer {
 			ChannelInit.class,
 			RegisterSocketEvent.class,
 			P2pMessage.class,
+			SendableEvent.class,
 			TcpUndeliveredEvent.class
 		};
 	}

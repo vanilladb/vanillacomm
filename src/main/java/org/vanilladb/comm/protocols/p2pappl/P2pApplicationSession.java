@@ -1,5 +1,6 @@
 package org.vanilladb.comm.protocols.p2pappl;
 
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.logging.Level;
@@ -12,6 +13,7 @@ import net.sf.appia.core.Direction;
 import net.sf.appia.core.Event;
 import net.sf.appia.core.Layer;
 import net.sf.appia.core.Session;
+import net.sf.appia.core.events.SendableEvent;
 import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.protocols.common.RegisterSocketEvent;
 import net.sf.appia.protocols.tcpcomplete.TcpUndeliveredEvent;
@@ -39,6 +41,8 @@ public class P2pApplicationSession extends Session {
 			handleRegisterSocket((RegisterSocketEvent) event);
 		else if (event instanceof P2pMessage)
 			handleP2pMessage((P2pMessage) event);
+		else if (event instanceof SendableEvent)
+			handleSendableEvent((SendableEvent) event);
 		else if (event instanceof TcpUndeliveredEvent)
 			handleTcpUndelivered((TcpUndeliveredEvent) event);
 	}
@@ -87,20 +91,36 @@ public class P2pApplicationSession extends Session {
 		if (logger.isLoggable(Level.FINE))
 			logger.fine("Received P2pMessage");
 		
-		if (p2pMsg.getDir() == Direction.UP) {
-			int senderId = processList.getId((SocketAddress) p2pMsg.source);
-			listener.onRecvP2pMessage(senderId, p2pMsg.getCarriedMessage());
-		} else {
-			try {
-				// Setup the address
-				p2pMsg.source = processList.getSelfProcess().getAddress();
-				p2pMsg.dest = processList.getProcess(p2pMsg.getReceiverId()).getAddress();
-				
-				// GO!
-				p2pMsg.go();
-			} catch (AppiaEventException ex) {
-				ex.printStackTrace();
+		// Convert it to a SendableEvent
+		try {
+			SendableEvent event = new SendableEvent();
+			event.source = processList.getSelfProcess().getAddress();
+			event.dest = processList.getProcess(p2pMsg.getReceiverId()).getAddress();
+			event.getMessage().pushObject(p2pMsg.getMessage());
+			event.setChannel(p2pMsg.getChannel());
+			event.setDir(Direction.DOWN);
+			event.setSourceSession(this);
+			event.init();
+		event.go();
+		} catch (AppiaEventException ex) {
+			ex.printStackTrace();
+		}
+	}
+	
+	private void handleSendableEvent(SendableEvent event) {
+		if (logger.isLoggable(Level.FINE))
+			logger.fine("Received SendableEvent");
+		
+		try {
+			if (event.getDir() == Direction.UP) {
+				int senderId = processList.getId((SocketAddress) event.source);
+				Serializable message = (Serializable) event.getMessage().popObject();
+				listener.onRecvP2pMessage(senderId, message);
+			} else {
+				event.go();
 			}
+		} catch (AppiaEventException ex) {
+			ex.printStackTrace();
 		}
 	}
 	
