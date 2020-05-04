@@ -12,6 +12,6 @@ public interface VanillaCommServerListener {
 	
 	void onReceiveP2pMessage(ProcessType senderType, int senderId, Serializable message);
 	
-	void onReceiveTotalOrderMessage(int serialNumber, Serializable message);
+	void onReceiveTotalOrderMessage(long serialNumber, Serializable message);
 	
 }

@@ -1,7 +1,6 @@
 package org.vanilladb.comm.protocols.totalorderappl;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -128,13 +127,13 @@ public class TotalOrderApplicationSession extends Session {
 	private void handleTotalOrderMessage(TotalOrderMessages event) {
 		if (logger.isLoggable(Level.FINE))
 			logger.fine(String.format("Received TotalOrderMessage (serial number start at: %d, length: %d)",
-					event.getMessageSerialNumberStart(), event.getMessages().size()));
+					event.getMessageSerialNumberStart(), event.getMessages().length));
 			
 		// Notify the listener
-		int startId = event.getMessageSerialNumberStart();
-		List<Serializable> messages = event.getMessages();
-		for (int id = 0; id < messages.size(); id++) {
-			totalMsgListener.onRecvTotalOrderMessage(startId + id, messages.get(id));
+		long startId = event.getMessageSerialNumberStart();
+		Serializable[] messages = event.getMessages();
+		for (int id = 0; id < messages.length; id++) {
+			totalMsgListener.onRecvTotalOrderMessage(startId + id, messages[id]);
 		}
 	}
 }

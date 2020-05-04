@@ -4,6 +4,6 @@ import java.io.Serializable;
 
 public interface TotalOrderMessageListener {
 	
-    void onRecvTotalOrderMessage(int serialNumber, Serializable message);
+    void onRecvTotalOrderMessage(long serialNumber, Serializable message);
 	
 }

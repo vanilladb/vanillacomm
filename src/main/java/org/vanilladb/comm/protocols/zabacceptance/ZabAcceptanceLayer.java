@@ -16,7 +16,7 @@ public class ZabAcceptanceLayer extends Layer {
 		evProvide = new Class[] {
 			ZabAccept.class,
 			ZabDeny.class,
-			ZabCommit.class,
+			ZabCacheProposal.class,
 		};
 		
 		// Events that the protocol requires to work
@@ -34,8 +34,6 @@ public class ZabAcceptanceLayer extends Layer {
 			FailureDetected.class,
 			LeaderChanged.class,
 			ZabPropose.class,
-			ZabAccept.class,
-			ZabDeny.class,
 		};
 	}
 

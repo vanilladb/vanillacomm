@@ -9,10 +9,11 @@ import org.vanilladb.comm.protocols.events.ProcessListInit;
 import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
 import org.vanilladb.comm.protocols.tcpfd.FailureDetected;
 import org.vanilladb.comm.protocols.zabelection.LeaderChanged;
+import org.vanilladb.comm.protocols.zabproposal.ZabProposal;
+import org.vanilladb.comm.protocols.zabproposal.ZabProposalId;
 import org.vanilladb.comm.protocols.zabproposal.ZabPropose;
 
 import net.sf.appia.core.AppiaEventException;
-import net.sf.appia.core.Channel;
 import net.sf.appia.core.Direction;
 import net.sf.appia.core.Event;
 import net.sf.appia.core.Layer;
@@ -22,11 +23,9 @@ public class ZabAcceptanceSession extends Session {
 	private static Logger logger = Logger.getLogger(ZabAcceptanceSession.class.getName());
 
 	private int epochId = 0;
-	private int serialNumber = 0;
+	private long lastReceivedProposalSerial = 0;
 	
 	private ProcessList processList;
-	private int voteCount = 0;
-	private boolean isCommitted = false;
 	
 	ZabAcceptanceSession(Layer layer) {
 		super(layer);
@@ -44,10 +43,6 @@ public class ZabAcceptanceSession extends Session {
 			handleLeaderChanged((LeaderChanged) event);
 		else if (event instanceof ZabPropose)
 			handleZabPropose((ZabPropose) event);
-		else if (event instanceof ZabAccept)
-			handleZabAccept((ZabAccept) event);
-		else if (event instanceof ZabDeny)
-			handleZabDeny((ZabDeny) event);
 	}
 	
 	private void handleProcessListInit(ProcessListInit event) {
@@ -119,16 +114,10 @@ public class ZabAcceptanceSession extends Session {
 	}
 	
 	private void handleZabPropose(ZabPropose event) {
-		
 		try {
 			if (event.getDir() == Direction.DOWN) { // Leader
 				if (logger.isLoggable(Level.FINE))
-					logger.fine(String.format("Received ZabPropose from application (epoch id: %d, proposal serial #: %d)",
-							event.getEpochId(), event.getProposalSerialNumber()));
-				
-				// Reset voting
-				voteCount = 0; // Leader has a vote
-				isCommitted = false;
+					logger.fine(String.format("Received ZabPropose from application"));
 				
 				// Note that the leader will also receive its broadcast message
 				// so the leader also has to send Accept message.
@@ -136,19 +125,24 @@ public class ZabAcceptanceSession extends Session {
 				// Let the event continue to broadcast
 				event.go();
 			} else { // Broadcast messages from network
+				ZabProposal proposal = (ZabProposal) event.getMessage().popObject();
+				ZabProposalId id = proposal.getId();
+				
 				if (logger.isLoggable(Level.FINE))
 					logger.fine(String.format("Received ZabPropose from network (epoch id: %d, proposal serial #: %d)",
-							event.getEpochId(), event.getProposalSerialNumber()));
+							id.getEpochId(), id.getSerialNumber()));
 				
-				if (event.getEpochId() == epochId && event.getProposalSerialNumber() > serialNumber) {
-					serialNumber = event.getProposalSerialNumber();
+				if (id.getEpochId() == epochId && id.getSerialNumber() > lastReceivedProposalSerial) {
+					lastReceivedProposalSerial = id.getSerialNumber();
 					
-					// Let the event go continue going UP for caching the message
-					event.go();
+					// Send a event to ZabProposalLayer for caching the message
+					ZabCacheProposal cache = new ZabCacheProposal(event.getChannel(), this, proposal);
+					cache.init();
+					cache.go();
 					
 					// Accept the proposal
-					ZabAccept accept = new ZabAccept(event.getChannel(), this,
-							event.getEpochId(), event.getProposalSerialNumber());
+					ZabAccept accept = new ZabAccept(event.getChannel(), this);
+					accept.getMessage().pushObject(id);
 					accept.source = processList.getSelfProcess().getAddress();
 					accept.dest = event.source;
 					accept.init();
@@ -156,11 +150,11 @@ public class ZabAcceptanceSession extends Session {
 
 					if (logger.isLoggable(Level.FINE))
 						logger.fine(String.format("Accept proposal (epoch id: %d, proposal serial #: %d)",
-								event.getEpochId(), event.getProposalSerialNumber()));
+								id.getEpochId(), id.getSerialNumber()));
 				} else {
 					// Deny the proposal
-					ZabDeny deny = new ZabDeny(event.getChannel(), this,
-							event.getEpochId(), event.getProposalSerialNumber());
+					ZabDeny deny = new ZabDeny(event.getChannel(), this);
+					deny.getMessage().pushObject(id);
 					deny.source = processList.getSelfProcess().getAddress();
 					deny.dest = event.source;
 					deny.init();
@@ -168,51 +162,9 @@ public class ZabAcceptanceSession extends Session {
 
 					if (logger.isLoggable(Level.FINE))
 						logger.fine(String.format("Deny proposal (epoch id: %d, proposal serial #: %d)",
-								event.getEpochId(), event.getProposalSerialNumber()));
+								id.getEpochId(), id.getSerialNumber()));
 				}
 			}
-		} catch (AppiaEventException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	// Leader's method
-	private void handleZabAccept(ZabAccept event) {
-		if (logger.isLoggable(Level.FINE))
-			logger.fine(String.format("Received ZabAccept from %s (epoch id: %d, proposal serial #: %d, vote #: %d)",
-					event.source, event.getEpochId(), event.getSerialNumber(), voteCount));
-		
-		if (event.getEpochId() == epochId && event.getSerialNumber() == serialNumber) {
-			voteCount++;
-			if (voteCount > processList.getCorrectCount() / 2 && !isCommitted) {
-				commit(event.getChannel());
-			}
-		}
-	}
-
-	// Leader's method
-	private void handleZabDeny(ZabDeny event) {
-		if (logger.isLoggable(Level.WARNING))
-			logger.warning(String.format("Received ZabDeny from %s (epoch id: %d, proposal serial #: %d, vote #: %d)",
-					event.source, event.getEpochId(), event.getSerialNumber(), voteCount));
-		
-		// TODO: Retry with higher number?
-	}
-	
-	private void commit(Channel chennel) {
-		if (logger.isLoggable(Level.FINE))
-			logger.fine(String.format("Commit the message (epoch id: %d, proposal serial #: %d, vote #: %d)",
-					epochId, serialNumber, voteCount));
-		
-		try {
-			// Broadcast the result (note that this process will
-			// also receive one since it is a broadcast)
-			ZabCommit commit = new ZabCommit(chennel, Direction.DOWN,
-					this, epochId, serialNumber);
-			commit.init();
-			commit.go();
-			
-			isCommitted = true;
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		}

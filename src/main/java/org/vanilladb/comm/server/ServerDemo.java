@@ -67,7 +67,7 @@ public class ServerDemo implements VanillaCommServerListener {
 	}
 
 	@Override
-	public void onReceiveTotalOrderMessage(int serialNumber, Serializable message) {
+	public void onReceiveTotalOrderMessage(long serialNumber, Serializable message) {
 		System.out.println("Received a total order message: " + message
 				+ ", serial number: " + serialNumber);
 	}

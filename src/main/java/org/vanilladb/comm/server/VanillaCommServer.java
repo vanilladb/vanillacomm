@@ -12,7 +12,6 @@ import org.vanilladb.comm.protocols.beb.BestEffortBroadcastLayer;
 import org.vanilladb.comm.protocols.p2pappl.P2pApplicationLayer;
 import org.vanilladb.comm.protocols.p2pappl.P2pMessage;
 import org.vanilladb.comm.protocols.p2pappl.P2pMessageListener;
-import org.vanilladb.comm.protocols.p2pcounting.P2pCountingLayer;
 import org.vanilladb.comm.protocols.tcpfd.TcpFailureDetectionLayer;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderApplicationLayer;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderMessageListener;
@@ -96,7 +95,7 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 	}
 
 	@Override
-	public void onRecvTotalOrderMessage(int serialNumber, Serializable message) {
+	public void onRecvTotalOrderMessage(long serialNumber, Serializable message) {
 		listener.onReceiveTotalOrderMessage(serialNumber, message);
 	}
 

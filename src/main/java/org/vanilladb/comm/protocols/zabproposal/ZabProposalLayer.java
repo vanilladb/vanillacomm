@@ -1,9 +1,13 @@
 package org.vanilladb.comm.protocols.zabproposal;
 
 import org.vanilladb.comm.protocols.events.ProcessListInit;
+import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderMessages;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderRequest;
+import org.vanilladb.comm.protocols.zabacceptance.ZabAccept;
+import org.vanilladb.comm.protocols.zabacceptance.ZabCacheProposal;
 import org.vanilladb.comm.protocols.zabacceptance.ZabCommit;
+import org.vanilladb.comm.protocols.zabacceptance.ZabDeny;
 import org.vanilladb.comm.protocols.zabelection.LeaderChanged;
 import org.vanilladb.comm.protocols.zabelection.LeaderInit;
 
@@ -16,26 +20,33 @@ public class ZabProposalLayer extends Layer {
 		// Events that the protocol will create
 		evProvide = new Class[] {
 			ZabPropose.class,
-			TotalOrderMessages.class
+			TotalOrderMessages.class,
+			ZabCommit.class
 		};
 		
 		// Events that the protocol requires to work
 		// This is a subset of the accepted events
 		evRequire = new Class[] {
 			ProcessListInit.class,
+			AllProcessesReady.class,
 			LeaderInit.class,
 			TotalOrderRequest.class,
-			ZabCommit.class,
+			ZabCacheProposal.class,
+			ZabAccept.class,
+			ZabDeny.class
 		};
 		
 		// Events that the protocol will accept
 		evAccept = new Class[] {
 			ProcessListInit.class,
+			AllProcessesReady.class,
 			LeaderInit.class,
 			LeaderChanged.class,
 			TotalOrderRequest.class,
-			ZabPropose.class,
-			ZabCommit.class,
+			ZabCacheProposal.class,
+			ZabAccept.class,
+			ZabDeny.class,
+			ZabCommit.class
 		};
 	}
 
