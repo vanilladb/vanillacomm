@@ -82,9 +82,11 @@ public class ProcessList implements Serializable {
         	addressToId.put(process.getAddress(), process.getId());
         }
     }
-
+    
     /**
-     * Clones the process list.
+     * Clone the given process list.
+     * 
+     * @param processList the process list to be cloned
      */
     public ProcessList(ProcessList processList) {
     	CommProcess[] targets = processList.processes;

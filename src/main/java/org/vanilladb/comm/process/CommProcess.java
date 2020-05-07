@@ -65,7 +65,9 @@ public class CommProcess implements Serializable {
 	}
 
     /**
-     * Clones the process.
+     * Clone the given process.
+     * 
+     * @param process the process to be cloned
      */
 	public CommProcess(CommProcess process) {
 		this.address = process.address;
