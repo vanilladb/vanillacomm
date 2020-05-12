@@ -1,0 +1,183 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>net.sf.appia</groupId>
+	<artifactId>core</artifactId>
+	<version>4.1.2-vanilladb</version>
+
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+
+	<developers>
+		<!-- Original Developers -->
+		<developer>
+			<name>Hugo Miranda</name>
+			<url>http://www.di.fc.ul.pt/~hmiranda/</url>
+		</developer>
+		<developer>
+			<name>Alexandre Pinto</name>
+		</developer>
+		<developer>
+			<name>Luís Rodrigues</name>
+			<url>https://www.gsd.inesc-id.pt/~ler/</url>
+		</developer>
+
+		<!-- Current Collaborators -->
+		<developer>
+			<name>Nuno Carvalho</name>
+			<url>http://www.gsd.inesc-id.pt/~nonius/</url>
+			<roles>
+				<role>main developer</role>
+				<role>project manager</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>José Mocito</name>
+			<url>http://www.gsd.inesc-id.pt/~jmocito/</url>
+			<roles>
+				<role>protocol developer</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Liliana Rosa</name>
+			<url>http://www.gsd.inesc-id.pt/~lrosa/</url>
+			<roles>
+				<role>protocol developer</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Paolo Romano</name>
+			<url>http://www.gsd.inesc-id.pt/~romanop/</url>
+			<roles>
+				<role>applications developer</role>
+				<role>tester</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Maria Couceiro</name>
+			<url>http://www.gsd.inesc-id.pt/~mcouceiro/</url>
+			<roles>
+				<role>applications developer</role>
+				<role>tester</role>
+			</roles>
+		</developer>
+
+		<!-- Past Collaborators -->
+		<developer>
+			<name>Bruno Simões</name>
+			<roles>
+				<role>protocol development</role>
+				<role>performance analysis</role>
+				<role>optimization</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Daniel Barradas</name>
+			<roles>
+				<role>Message class implementation</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Fernando Vicente</name>
+			<roles>
+				<role>protocol development</role>
+				<role>performance analysis</role>
+				<role>optimization</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>João Martins</name>
+			<roles>
+				<role>protocol development</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Maria João Monteiro</name>
+			<roles>
+				<role>protocol development</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Pedro Vicente</name>
+			<roles>
+				<role>protocol development</role>
+				<role>group api</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Paulo Sousa</name>
+			<roles>
+				<role>protocol development</role>
+				<role>performance analysis</role>
+				<role>optimization</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Sérgio Formigo</name>
+			<roles>
+				<role>protocol development</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Sandra Teixeira</name>
+			<roles>
+				<role>protocol development</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Susana Guedes</name>
+			<roles>
+				<role>protocol development</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Valter Conceição</name>
+			<roles>
+				<role>protocol development</role>
+			</roles>
+		</developer>
+	</developers>
+
+	<dependencies>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.14</version>
+		</dependency>
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<!-- Use JDK 1.7, instead of the default one (JDK 1.5) -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.5.1</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+
+			<!-- Generate the source jar -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>2.2.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

@@ -6,5 +6,9 @@
 .project
 target/
 
+# The file generated during `mvn package`
+dependency-reduced-pom.xml
+
 ### Others ###
 design
+

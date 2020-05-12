@@ -1,50 +1,19 @@
-/*
- *
- * Hands-On code of the book Introduction to Reliable Distributed Programming
- * by Christian Cachin, Rachid Guerraoui and Luis Rodrigues
- * Copyright (C) 2005-2011 Luis Rodrigues
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
- *
- * Contact
- * 	Address:
- *		Rua Alves Redol 9, Office 605
- *		1000-029 Lisboa
- *		PORTUGAL
- * 	Email:
- * 		ler@ist.utl.pt
- * 	Web:
- *		http://homepages.gsd.inesc-id.pt/~ler/
- * 
- */
+package org.vanilladb.comm.protocols.floodingconsensus;
 
-package org.vanilladb.comm.protocols.floodingConsensus;
-
-import java.io.PrintStream;
 import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.vanilladb.comm.protocols.consensusUtils.Proposal;
-import org.vanilladb.comm.protocols.events.ConsensusDecide;
-import org.vanilladb.comm.protocols.events.ConsensusPropose;
-import org.vanilladb.comm.protocols.events.Crash;
-import org.vanilladb.comm.protocols.events.ProcessInitEvent;
-import org.vanilladb.comm.protocols.floodingConsensus.DecidedEvent;
-import org.vanilladb.comm.protocols.floodingConsensus.MySetEvent;
-import org.vanilladb.comm.protocols.utils.ProcessSet;
-import org.vanilladb.comm.protocols.utils.SampleProcess;
+import org.vanilladb.comm.process.ProcessList;
+import org.vanilladb.comm.process.ProcessState;
+import org.vanilladb.comm.protocols.events.ProcessListInit;
+import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
+import org.vanilladb.comm.protocols.tcpfd.FailureDetected;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
@@ -54,270 +23,216 @@ import net.sf.appia.core.Layer;
 import net.sf.appia.core.Session;
 
 /**
- * The Regular Flooding Consensus implementation.
+ * This implements Flooding Consensus Protocol. Note that this can only be run once.
  * 
- * @author alexp
+ * @author SLMT
+ *
  */
 public class FloodingConsensusSession extends Session {
+	private static Logger logger = Logger.getLogger(FloodingConsensusSession.class.getName());
+	
+	private ProcessList processList;
+	private int roundId = 1;
+	private boolean hasDecided = false;
+	private List<Set<Value>> proposalsPerRound = new ArrayList<Set<Value>>();
+	private List<Set<Integer>> correctsPerRound = new ArrayList<Set<Integer>>();
+	
+	FloodingConsensusSession(Layer layer) {
+		super(layer);
+	}
+	
+	@Override
+	public void handle(Event event) {
+		if (event instanceof ProcessListInit)
+			handleProcessListInit((ProcessListInit) event);
+		else if (event instanceof AllProcessesReady)
+			handleAllProcessesReady((AllProcessesReady) event);
+		else if (event instanceof FailureDetected)
+			handleFailureDetected((FailureDetected) event);
+		else if (event instanceof ConsensusRequest)
+			handleConsensusRequest((ConsensusRequest) event);
+		else if (event instanceof Propose)
+			handlePropose((Propose) event);
+		else if (event instanceof Decide)
+			handleDecide((Decide) event);
+	}
+	
+	private void handleProcessListInit(ProcessListInit event) {
+		if (logger.isLoggable(Level.FINE))
+			logger.fine("Received ProcessListInit");
+		
+		// Save the list
+		this.processList = event.copyProcessList();
+		
+		// Let the event continue
+		try {
+			event.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void handleAllProcessesReady(AllProcessesReady event) {
+		if (logger.isLoggable(Level.FINE))
+			logger.fine("Received AllProcessesReady");
+		
+		// Set all process states to correct
+		for (int i = 0; i < processList.getSize(); i++) {
+			processList.getProcess(i).setState(ProcessState.CORRECT);
+		}
+		
+		// Let the event continue
+		try {
+			event.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+		
+		// Add all the correct processes to the list of initial round (round 0)
+		correctsPerRound.clear();
+		correctsPerRound.add(processList.getCorrectProcessIds());
+	}
+	
+	private void handleFailureDetected(FailureDetected event) {
+		if (logger.isLoggable(Level.FINE))
+			logger.fine("Received FailureDetected (failed id = " +
+					event.getFailedProcessId() + ")");
+		
+		processList.getProcess(event.getFailedProcessId()).setState(ProcessState.FAILED);
+		
+		// Let the event continue
+		try {
+			event.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void handleConsensusRequest(ConsensusRequest event) {
+		if (logger.isLoggable(Level.FINE))
+			logger.fine("Received ConsensusRequest");
+		
+		// Note that we start from round one
+		roundId = 1;
+		
+		// Create a new proposal
+		Set<Value> proposal = new HashSet<Value>();
+		proposal.add(event.getValue());
+		
+		// Propose
+		propose(event.getChannel(), roundId, proposal);
+	}
+	
+	// Note that we might receive a proposal from ourselves
+	// since it is a broadcast.
+	private void handlePropose(Propose event) {
+		if (logger.isLoggable(Level.FINE))
+			logger.fine("Received Propose");
+		
+		// Includes the proposal
+		includePrposal(event.getRoundId(), event.getProposal());
+		
+		// Record who sent the proposal
+		int senderPid = processList.getId((SocketAddress) event.source);
+		setCorrect(event.getRoundId(), senderPid);
+		
+		// See if we can decide a value
+		tryDecide(event.getChannel());
+	}
+	
+	private void handleDecide(Decide event) {
+		if (logger.isLoggable(Level.FINE))
+			logger.fine("Received Decide");
+		
+		if (!hasDecided) {
+			hasDecided = true;
+			
+			// Deliver the result
+			deliverDecision(event.getChannel(), event.getValue());
+			
+			// Relay the decision
+			try {
+				event.setDir(Direction.DOWN);
+				event.setSourceSession(this);
+				event.init();
+				event.go();
+			} catch (AppiaEventException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private void propose(Channel channel, int roundId, Set<Value> proposal) {
+		// Send a Propose broadcast
+		try {
+			Propose propose = new Propose(channel, this, roundId, proposal);
+			propose.init();
+			propose.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void includePrposal(int roundId, Set<Value> receivedProposal) {
+		// Extends the proposal list to match the round
+		while (proposalsPerRound.size() < roundId + 1) {
+			proposalsPerRound.add(new HashSet<Value>());
+		}
+		
+		// Add the proposal to the list
+		proposalsPerRound.get(roundId).addAll(receivedProposal);
+	}
+	
+	private void setCorrect(int roundId, int pid) {
+		// Extends the correct list to match the round
+		while (correctsPerRound.size() < roundId + 1) {
+			correctsPerRound.add(new HashSet<Integer>());
+		}
+		
+		// Add the correct process to the list
+		correctsPerRound.get(roundId).add(pid);
+	}
+	
+	private void tryDecide(Channel channel) {
+		// Check if we have received all the proposal in the current round
+		if (!hasDecided && correctsPerRound.get(roundId).containsAll(processList.getCorrectProcessIds())) {
+			// Check if the view changes in this round
+			if (correctsPerRound.get(roundId).containsAll(correctsPerRound.get(roundId - 1))) {
+				decide(channel);
+			} else {
+				// Cannot decide, start a new round
+				roundId++;
+				propose(channel, roundId, proposalsPerRound.get(roundId - 1));
+			}
+		}
+	}
 
-    public FloodingConsensusSession(Layer layer) {
-        super(layer);
-    }
-
-    private int round = 0;
-
-    private ProcessSet correct = null;
-
-    private Proposal decided = null;
-
-    private HashSet<SampleProcess>[] correct_this_round = null;
-
-    private HashSet<Proposal>[] proposal_set = null;
-
-    public void handle(Event event) {
-        if (event instanceof ProcessInitEvent)
-            handleProcessInit((ProcessInitEvent) event);
-        else if (event instanceof Crash)
-            handleCrash((Crash) event);
-        else if (event instanceof ConsensusPropose)
-            handleConsensusPropose((ConsensusPropose) event);
-        else if (event instanceof MySetEvent)
-            handleMySet((MySetEvent) event);
-        else if (event instanceof DecidedEvent)
-            handleDecided((DecidedEvent) event);
-        else {
-            debug("Unwanted event received, ignoring.");
-            try {
-                event.go();
-            } catch (AppiaEventException ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void init() {
-        int max_rounds = correct.getSize() + 1;
-        correct_this_round = new HashSet[max_rounds];
-        proposal_set = new HashSet[max_rounds];
-        int i;
-        for (i = 0; i < max_rounds; i++) {
-            correct_this_round[i] = new HashSet<SampleProcess>();
-            proposal_set[i] = new HashSet<Proposal>();
-        }
-        for (i = 0; i < correct.getSize(); i++) {
-            SampleProcess p = correct.getProcess(i);
-            if (p.isCorrect())
-                correct_this_round[0].add(p);
-        }
-        round = 1;
-        decided = null;
-
-        count_decided = 0;
-    }
-
-    private void handleProcessInit(ProcessInitEvent event) {
-        correct = event.getProcessSet();
-        init();
-        try {
-            event.go();
-        } catch (AppiaEventException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private void handleCrash(Crash crash) {
-        correct.setCorrect(crash.getCrashedProcess(), false);
-        try {
-            crash.go();
-        } catch (AppiaEventException ex) {
-            ex.printStackTrace();
-        }
-
-        decide(crash.getChannel());
-    }
-
-    private void handleConsensusPropose(ConsensusPropose propose) {
-        proposal_set[round].add(propose.value);
-        try {
-
-            MySetEvent ev = new MySetEvent(propose.getChannel(),
-                    Direction.DOWN, this);
-            ev.getMessage().pushObject(proposal_set[round]);
-            ev.getMessage().pushInt(round);
-            ev.go();
-        } catch (AppiaEventException ex) {
-            ex.printStackTrace();
-        }
-
-        decide(propose.getChannel());
-    }
-
-    @SuppressWarnings("unchecked")
-    private void handleMySet(MySetEvent event) {
-        SampleProcess p_i = correct.getProcess((SocketAddress) event.source);
-        int r = event.getMessage().popInt();
-        HashSet<Proposal> set = (HashSet<Proposal>) event.getMessage()
-                .popObject();
-        correct_this_round[r].add(p_i);
-        proposal_set[r].addAll(set);
-        decide(event.getChannel());
-    }
-
-    /**
-     * Determines if a decision can be made.
-     * 
-     * @param channel
-     */
-    private void decide(Channel channel) {
-        int i;
-
-        debugAll("decide");
-
-        if (decided != null)
-            return;
-
-        for (i = 0; i < correct.getSize(); i++) {
-            SampleProcess p = correct.getProcess(i);
-            if ((p != null) && p.isCorrect()
-                    && !correct_this_round[round].contains(p))
-                return;
-        }
-
-        if (correct_this_round[round].equals(correct_this_round[round - 1])) {
-
-            for (Proposal proposal : proposal_set[round])
-                if (decided == null)
-                    decided = proposal;
-                else if (proposal.compareTo(decided) < 0)
-                    decided = proposal;
-
-            try {
-                ConsensusDecide ev = new ConsensusDecide(channel, Direction.UP,
-                        this);
-                ev.decision = (Proposal) decided;
-                ev.go();
-            } catch (AppiaEventException ex) {
-                ex.printStackTrace();
-            }
-
-            try {
-                DecidedEvent ev = new DecidedEvent(channel, Direction.DOWN,
-                        this);
-                ev.getMessage().pushObject(decided);
-                ev.go();
-            } catch (AppiaEventException ex) {
-                ex.printStackTrace();
-            }
-        } else {
-            round++;
-            proposal_set[round].addAll(proposal_set[round - 1]);
-            try {
-                MySetEvent ev = new MySetEvent(channel, Direction.DOWN, this);
-                ev.getMessage().pushObject(proposal_set[round]);
-                ev.getMessage().pushInt(round);
-                ev.go();
-            } catch (AppiaEventException ex) {
-                ex.printStackTrace();
-            }
-
-            count_decided = 0;
-        }
-    }
-
-    private void handleDecided(DecidedEvent event) {
-        // Counts the number os Decided messages received and reinitiates the
-        // algorithm
-        if ((++count_decided >= correctSize()) && (decided != null)) {
-            init();
-            return;
-        }
-
-        if (decided != null)
-            return;
-
-        SampleProcess p_i = correct.getProcess((SocketAddress) event.source);
-        if (!p_i.isCorrect())
-            return;
-
-        decided = (Proposal) event.getMessage().popObject();
-
-        try {
-            ConsensusDecide ev = new ConsensusDecide(event.getChannel(),
-                    Direction.UP, this);
-            ev.decision = decided;
-            ev.go();
-        } catch (AppiaEventException ex) {
-            ex.printStackTrace();
-        }
-
-        try {
-            DecidedEvent ev = new DecidedEvent(event.getChannel(),
-                    Direction.DOWN, this);
-            ev.getMessage().pushObject(decided);
-            ev.go();
-        } catch (AppiaEventException ex) {
-            ex.printStackTrace();
-        }
-
-        round = 0;
-    }
-
-    // Used to count the number of Decided messages received, therefore
-    // determining when
-    // all processes have decided and therefore allow a new decision process.
-    private int count_decided;
-
-    private int correctSize() {
-        int size = 0, i;
-        SampleProcess[] processes = correct.getAllProcesses();
-        for (i = 0; i < processes.length; i++) {
-            if ((processes[i] != null) && processes[i].isCorrect())
-                ++size;
-        }
-        return size;
-    }
-
-    // DEBUG
-    public static final boolean debugFull = false;
-
-    private PrintStream debug = System.out;
-
-    private void debug(String s) {
-        if ((debug != null) && debugFull)
-            debug.println(this.getClass().getName() + ": " + s);
-    }
-
-    private void debugAll(String s) {
-        if ((debug == null) || !debugFull)
-            return;
-
-        debug.println();
-        debug.println("DEBUG ALL - " + s);
-        debug.println("\tround=" + round);
-        debug.print("\tcorrect=");
-        int i;
-        for (i = 0; i < correct.getSize(); i++) {
-            SampleProcess p = correct.getProcess(i);
-            debug.print("[" + p.getProcessNumber() + ";" + p.getSocketAddress()
-                    + ";" + p.isCorrect() + "],");
-        }
-        debug.println();
-        debug.println("\tdecided=" + decided);
-        for (i = 0; i < correct_this_round.length; i++) {
-            debug.print("\tcorrect_this_round[" + i + "]=");
-
-            for (SampleProcess p : correct_this_round[i])
-                debug.print(p.getProcessNumber() + ",");
-
-            debug.println();
-        }
-        for (i = 0; i < proposal_set.length; i++) {
-            debug.print("\tproposal_set[" + i + "]=");
-            for (Proposal prop : proposal_set[i])
-                debug.print("(" + prop.toString() + "),");
-            debug.println();
-        }
-        debug.println();
-    }
+	
+	private void decide(Channel channel) {
+		// Make a decision
+		Value decision = Collections.min(proposalsPerRound.get(roundId));
+		
+		// Deliver the decision
+		hasDecided = true;
+		deliverDecision(channel, decision);
+		
+		// Send a decide broadcast
+		try {
+			Decide decide = new Decide(channel, this, decision);
+			decide.init();
+			decide.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void deliverDecision(Channel channel, Value decision) {
+		try {
+			ConsensusResult result = new ConsensusResult(channel, this, decision);
+			result.init();
+			result.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+	}
 }
