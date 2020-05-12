@@ -48,6 +48,9 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 		this.listener = listener;
 		TcpCompleteSession tcpSession = setupZabChannel(globalSelfId);
 		setupP2pChannel(globalSelfId, tcpSession);
+		
+		// Disable Log4j Logging which is the default logger of Appia
+		org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.OFF);
 	}
 
 	@Override
