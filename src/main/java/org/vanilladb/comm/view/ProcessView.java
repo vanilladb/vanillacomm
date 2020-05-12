@@ -1,9 +1,6 @@
 package org.vanilladb.comm.view;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -14,8 +11,6 @@ import org.vanilladb.comm.process.CommProcess;
 import org.vanilladb.comm.process.ProcessList;
 
 public class ProcessView {
-	
-	public static final boolean HAS_STAND_ALONE_SEQUENCER;
 	
 	public static final ProcessList SERVER_LIST;
 	public static final ProcessList CLIENT_LIST;
@@ -46,9 +41,6 @@ public class ProcessView {
 		
 		String serverListStr = System.getProperty(ProcessView.class.getName() + ".SERVER_VIEW");
 		String clientListStr = System.getProperty(ProcessView.class.getName() + ".CLIENT_VIEW");
-		String prop = System.getProperty(ProcessView.class.getName() +
-				".HAS_STAND_ALONE_SEQUENCER");
-		HAS_STAND_ALONE_SEQUENCER = (prop != null ? Boolean.parseBoolean(prop) : false);
 		
 		SERVER_LIST = buildProcessList(serverListStr);
 		CLIENT_LIST = buildProcessList(clientListStr);
