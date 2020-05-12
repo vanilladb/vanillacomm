@@ -1,6 +1,9 @@
 package org.vanilladb.comm.view;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -22,22 +25,25 @@ public class ProcessView {
 	static {
 		// read config file
 		String path = System.getProperty("org.vanilladb.comm.config.file");
-		if (path != null) {
+		if (path != null && !path.isEmpty()) {
 			FileInputStream fis = null;
 			try {
 				fis = new FileInputStream(path);
 				System.getProperties().load(fis);
 			} catch (IOException e) {
-				// do nothing
+				throw new RuntimeException(e);
 			} finally {
 				try {
 					if (fis != null)
 						fis.close();
 				} catch (IOException e) {
-					// do nothing
+					throw new RuntimeException(e);
 				}
 			}
+		} else {
+			throw new RuntimeException("Cannot find the view configuration file in system properties.");
 		}
+		
 		String serverListStr = System.getProperty(ProcessView.class.getName() + ".SERVER_VIEW");
 		String clientListStr = System.getProperty(ProcessView.class.getName() + ".CLIENT_VIEW");
 		String prop = System.getProperty(ProcessView.class.getName() +
