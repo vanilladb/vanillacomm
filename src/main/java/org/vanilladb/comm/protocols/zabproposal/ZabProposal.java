@@ -2,6 +2,9 @@ package org.vanilladb.comm.protocols.zabproposal;
 
 import java.io.Serializable;
 
+/**
+ * A Zab proposal
+ */
 public class ZabProposal implements Serializable {
 	
 	private static final long serialVersionUID = 20200501001L;

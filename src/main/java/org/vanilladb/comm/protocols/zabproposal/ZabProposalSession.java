@@ -235,6 +235,15 @@ public class ZabProposalSession extends Session {
 			
 			// Create a event for sending the proposal
 			ZabPropose propose = new ZabPropose(channel, this);
+			// Note: there are two ways to send a proposal via a SendableEvent.
+			// The first way is to push each proposed value and the corresponding
+			// information such as epoch id and proposal id one by one.
+			// Another way is to package them into a single object and pushObject
+			// it once.
+			// We chose the second way not only for higher readability
+			// but also for efficiency.
+			// According to our research, calling pushObject multiple times
+			// for a large proposal dramatically reduces scalability of this module.
 			propose.getMessage().pushObject(proposal);
 			propose.init();
 			propose.go();
