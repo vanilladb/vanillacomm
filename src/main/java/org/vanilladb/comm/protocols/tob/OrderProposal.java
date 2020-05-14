@@ -3,7 +3,7 @@ package org.vanilladb.comm.protocols.tob;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.vanilladb.comm.protocols.floodingconsensus.Value;
+import org.vanilladb.comm.protocols.floodingcons.Value;
 import org.vanilladb.comm.protocols.rb.MessageId;
 
 public class OrderProposal implements Value {

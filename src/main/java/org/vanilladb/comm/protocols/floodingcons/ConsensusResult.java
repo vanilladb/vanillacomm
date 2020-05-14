@@ -1,4 +1,4 @@
-package org.vanilladb.comm.protocols.floodingconsensus;
+package org.vanilladb.comm.protocols.floodingcons;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;

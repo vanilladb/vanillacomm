@@ -1,6 +1,4 @@
-package org.vanilladb.comm.protocols.floodingconsensus;
-
-import java.util.Set;
+package org.vanilladb.comm.protocols.floodingcons;
 
 import org.vanilladb.comm.protocols.beb.Broadcast;
 
@@ -9,51 +7,40 @@ import net.sf.appia.core.Channel;
 import net.sf.appia.core.Direction;
 import net.sf.appia.core.Session;
 
-public class Propose extends Broadcast {
+public class Decide extends Broadcast {
 	
 	private boolean isInitailized;
 	
-	private int roundId;
-	private Set<Value> proposal;
+	private Value value;
 	
 	// We must provide a public constructor for TcpCompleteSession
 	// in order to reconstruct this on the other side
-	public Propose() {
+	public Decide() {
 		super();
 		this.isInitailized = false;
 	}
 	
-	public Propose(Channel channel, Session source,
-			int roundId, Set<Value> proposal)
+	public Decide(Channel channel, Session source, Value value)
 			throws AppiaEventException {
 		super(channel, Direction.DOWN, source);
-		this.roundId = roundId;
-		this.proposal = proposal;
+		this.value = value;
 		this.isInitailized = true;
 		
 		// Push the data to the message buffer in order to send
 		// through network
-		getMessage().pushInt(roundId);
-		getMessage().pushObject(proposal);
+		getMessage().pushObject(value);
 	}
 	
-	public int getRoundId() {
+	public Value getValue() {
 		if (!isInitailized)
 			recoverData();
-		return roundId;
-	}
-	
-	public Set<Value> getProposal() {
-		if (!isInitailized)
-			recoverData();
-		return proposal;
+		return value;
 	}
 	
 	private void recoverData() {
 		// The data must be recovered from the message buffer
 		// after it is sent through the network.
-		proposal = (Set<Value>) getMessage().popObject();
-		roundId = getMessage().popInt();
+		value = (Value) getMessage().popObject();
 		isInitailized = true;
 	}
 }

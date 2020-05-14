@@ -1,8 +1,8 @@
 package org.vanilladb.comm.protocols.tob;
 
 import org.vanilladb.comm.protocols.events.ProcessListInit;
-import org.vanilladb.comm.protocols.floodingconsensus.ConsensusRequest;
-import org.vanilladb.comm.protocols.floodingconsensus.ConsensusResult;
+import org.vanilladb.comm.protocols.floodingcons.ConsensusRequest;
+import org.vanilladb.comm.protocols.floodingcons.ConsensusResult;
 import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
 import org.vanilladb.comm.protocols.tcpfd.FailureDetected;
 

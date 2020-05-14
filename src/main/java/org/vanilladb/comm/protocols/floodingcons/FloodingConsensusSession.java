@@ -1,4 +1,4 @@
-package org.vanilladb.comm.protocols.floodingconsensus;
+package org.vanilladb.comm.protocols.floodingcons;
 
 import java.net.SocketAddress;
 import java.util.ArrayList;
