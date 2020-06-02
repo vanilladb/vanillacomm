@@ -12,8 +12,8 @@ import java.util.logging.Logger;
 import org.vanilladb.comm.process.ProcessList;
 import org.vanilladb.comm.process.ProcessState;
 import org.vanilladb.comm.protocols.events.ProcessListInit;
-import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
 import org.vanilladb.comm.protocols.tcpfd.FailureDetected;
+import org.vanilladb.comm.protocols.tcpfd.ProcessConnected;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
@@ -45,8 +45,8 @@ public class FloodingConsensusSession extends Session {
 	public void handle(Event event) {
 		if (event instanceof ProcessListInit)
 			handleProcessListInit((ProcessListInit) event);
-		else if (event instanceof AllProcessesReady)
-			handleAllProcessesReady((AllProcessesReady) event);
+		else if (event instanceof ProcessConnected)
+			handleProcessConnected((ProcessConnected) event);
 		else if (event instanceof FailureDetected)
 			handleFailureDetected((FailureDetected) event);
 		else if (event instanceof ConsensusRequest)
@@ -70,16 +70,14 @@ public class FloodingConsensusSession extends Session {
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		}
+		
+		// Initialize the first round
+		correctsPerRound.add(new HashSet<Integer>());
 	}
 	
-	private void handleAllProcessesReady(AllProcessesReady event) {
+	private void handleProcessConnected(ProcessConnected event) {
 		if (logger.isLoggable(Level.FINE))
-			logger.fine("Received AllProcessesReady");
-		
-		// Set all process states to correct
-		for (int i = 0; i < processList.getSize(); i++) {
-			processList.getProcess(i).setState(ProcessState.CORRECT);
-		}
+			logger.fine("Received ProcessConnected");
 		
 		// Let the event continue
 		try {
@@ -88,9 +86,12 @@ public class FloodingConsensusSession extends Session {
 			e.printStackTrace();
 		}
 		
-		// Add all the correct processes to the list of initial round (round 0)
-		correctsPerRound.clear();
-		correctsPerRound.add(processList.getCorrectProcessIds());
+		// Set the connected process ready
+		processList.getProcess(event.getConnectedProcessId())
+				.setState(ProcessState.CORRECT);
+		
+		// Add the correct processes to the list of initial round (round 0)
+		correctsPerRound.get(0).add(event.getConnectedProcessId());
 	}
 	
 	private void handleFailureDetected(FailureDetected event) {

@@ -1,6 +1,7 @@
 package org.vanilladb.comm.protocols.p2pappl;
 
 import org.vanilladb.comm.process.ProcessList;
+import org.vanilladb.comm.protocols.events.ProcessListInit;
 
 import net.sf.appia.core.Layer;
 import net.sf.appia.core.Session;
@@ -26,6 +27,7 @@ public class P2pApplicationLayer extends Layer {
 			RegisterSocketEvent.class,
 			P2pMessage.class,
 			SendableEvent.class,
+			ProcessListInit.class
 		};
 		
 		// Events that the protocol requires to work

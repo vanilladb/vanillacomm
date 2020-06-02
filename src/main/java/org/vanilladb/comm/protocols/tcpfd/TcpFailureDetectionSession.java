@@ -1,7 +1,9 @@
 package org.vanilladb.comm.protocols.tcpfd;
 
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,7 +31,8 @@ public class TcpFailureDetectionSession extends Session {
 	
 	private ProcessList processList;
 	private Map<Integer, Long> lastReceived = new HashMap<Integer, Long>();
-	private boolean allReadyIsSent = false;
+	private Map<Integer, List<Channel>> processIdsToChannels = new HashMap<Integer, List<Channel>>();
+	private Channel largerChannel; // The channel which assigns a larger process list
 	
 	TcpFailureDetectionSession(Layer layer) {
 		super(layer);
@@ -51,10 +54,15 @@ public class TcpFailureDetectionSession extends Session {
 	
 	private void handleProcessListInit(ProcessListInit event) {
 		if (logger.isLoggable(Level.FINE))
-			logger.fine("Received ProcessListInit");
+			logger.fine("Received ProcessListInit from Channel "
+					+ event.getChannel().getChannelID());
 		
-		// Save the list
-		this.processList = event.copyProcessList();
+		// Save the list (if it is larger)
+		ProcessList list = event.copyProcessList();
+		if (this.processList == null || list.getSize() > this.processList.getSize()) {
+			this.processList = list;
+			this.largerChannel = event.getChannel();
+		}
 		
 		// Let the event continue
 		try {
@@ -63,10 +71,22 @@ public class TcpFailureDetectionSession extends Session {
 			e.printStackTrace();
 		}
 		
-		// Set the start time
-		long startTime = System.currentTimeMillis();
-		for (int id = 0; id < processList.getSize(); id++)
-			lastReceived.put(id, startTime);
+		// Add the channel to the notify list
+		for (int pid = 0; pid < list.getSize(); pid++) {
+			List<Channel> channels = processIdsToChannels.get(pid);
+			if (channels == null) {
+				channels = new ArrayList<Channel>();
+				channels.add(event.getChannel());
+				processIdsToChannels.put(pid, channels);
+				
+				// Set the start time
+				long startTime = System.currentTimeMillis();
+				lastReceived.put(pid, startTime);
+			} else {
+				channels.add(event.getChannel());
+			}
+		}
+			
 	}
 	
 	private void handleRegisterSocket(RegisterSocketEvent event) {
@@ -82,10 +102,10 @@ public class TcpFailureDetectionSession extends Session {
 					logger.fine("Sending heartbeats to all other nodes");
 				
 				// Send heartbeats
-				sendHeartbeatSignal(event.getChannel());
+				sendHeartbeatSignal();
 				
 				// Retry later, in case that other processes are still initializing 
-				scheduleNextHeartbeat(event.getChannel());
+				scheduleNextHeartbeat();
 			}
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
@@ -98,22 +118,23 @@ public class TcpFailureDetectionSession extends Session {
 		if (logger.isLoggable(Level.FINE))
 			logger.fine("Received Heartbeat from " + event.source);
 		
-		// Set the state as CORRECT
+		// Record when the heartbeat is received
 		CommProcess process = processList.getProcess((SocketAddress) event.source);
-		process.setState(ProcessState.CORRECT);
 		lastReceived.put(process.getId(), System.currentTimeMillis());
 		
-		// Check if all processes are correct
-		if (!allReadyIsSent && processList.areAllCorrect()) {
-			try {
-				AllProcessesReady ready = new AllProcessesReady(event.getChannel(),
-						Direction.UP, this);
-				ready.init();
-				ready.go();
-			} catch (AppiaEventException e) {
-				e.printStackTrace();
+		// If the process has not been initialized
+		if (!process.isInitialized()) {
+			// Set the state as CORRECT
+			process.setState(ProcessState.CORRECT);
+			for (Channel channel : processIdsToChannels.get(process.getId())) {
+				try {
+					ProcessConnected conn = new ProcessConnected(channel, this, process.getId());
+					conn.init();
+					conn.go();
+				} catch (AppiaEventException e) {
+					e.printStackTrace();
+				}
 			}
-			allReadyIsSent = true;
 		}
 	}
 	
@@ -135,7 +156,7 @@ public class TcpFailureDetectionSession extends Session {
 			} else if (processList.getProcess(processId).isCorrect()) {
 				if (logger.isLoggable(Level.SEVERE))
 					logger.severe("Detected failed processs " + event.getFailedAddress() + " due to TCP undelivered.");
-				detectFailedProcess(event.getChannel(), processId);
+				detectFailedProcess(processId);
 			}
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
@@ -147,7 +168,7 @@ public class TcpFailureDetectionSession extends Session {
 			// Check if there is any heartbeat that is not received
 			for (int id = 0; id < processList.getSize(); id++) {
 				if (id != processList.getSelfId() &&
-						processList.getProcess(id).isInitialized()) {
+						processList.getProcess(id).isCorrect()) {
 					long lastTime = lastReceived.get(id);
 					if (System.currentTimeMillis() - lastTime > HEARTBEAT_TIMEOUT) {
 						if (logger.isLoggable(Level.SEVERE)) {
@@ -155,14 +176,14 @@ public class TcpFailureDetectionSession extends Session {
 							logger.severe("Detected failed processs " +
 									process.getAddress() + " due to heartbeat timeout.");
 						}
-						detectFailedProcess(event.getChannel(), id);
+						detectFailedProcess(id);
 					}
 				}
 			}
 			
 			// Send more heartbeats
-			sendHeartbeatSignal(event.getChannel());
-			scheduleNextHeartbeat(event.getChannel());
+			sendHeartbeatSignal();
+			scheduleNextHeartbeat();
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		} catch (AppiaException e) {
@@ -170,10 +191,10 @@ public class TcpFailureDetectionSession extends Session {
 		}
 	}
 	
-	private void sendHeartbeatSignal(Channel channel) throws AppiaEventException {
+	private void sendHeartbeatSignal() throws AppiaEventException {
 		for (int id = 0; id < processList.getSize(); id++) {
 			if (id != processList.getSelfId()) {
-				Heartbeat heartbeat = new Heartbeat(channel, this);
+				Heartbeat heartbeat = new Heartbeat(largerChannel, this);
 				heartbeat.source = processList.getSelfProcess().getAddress();
 				heartbeat.dest = processList.getProcess(id).getAddress();
 				heartbeat.init();
@@ -182,20 +203,22 @@ public class TcpFailureDetectionSession extends Session {
 		}
 	}
 	
-	private void scheduleNextHeartbeat(Channel channel) throws AppiaEventException, AppiaException {
+	private void scheduleNextHeartbeat() throws AppiaEventException, AppiaException {
 		NextHeartbeat next = new NextHeartbeat(HEARTBEAT_PERIOD, "NextHeartbeat",
-				channel, this);
+				largerChannel, this);
 		next.init();
 		next.go();
 	}
 	
-	private void detectFailedProcess(Channel channel, int failedId) throws AppiaEventException {
+	private void detectFailedProcess(int failedId) throws AppiaEventException {
 		// Mark failed
 		processList.getProcess(failedId).setState(ProcessState.FAILED);
 		
 		// Notify upper layers of the failed process
-		FailureDetected fd = new FailureDetected(channel, this, failedId);
-		fd.init();
-		fd.go();
+		for (Channel channel : processIdsToChannels.get(failedId)) {
+			FailureDetected fd = new FailureDetected(channel, this, failedId);
+			fd.init();
+			fd.go();
+		}
 	}
 }

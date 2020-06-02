@@ -15,7 +15,7 @@ public class TcpFailureDetectionLayer extends Layer {
 			Heartbeat.class,
 			NextHeartbeat.class,
 			FailureDetected.class,
-			AllProcessesReady.class,
+			ProcessConnected.class,
 		};
 		
 		// Events that the protocol requires to work

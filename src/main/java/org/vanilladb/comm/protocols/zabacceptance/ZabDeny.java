@@ -2,7 +2,6 @@ package org.vanilladb.comm.protocols.zabacceptance;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
-import net.sf.appia.core.Direction;
 import net.sf.appia.core.Session;
 import net.sf.appia.core.events.SendableEvent;
 
@@ -14,8 +13,8 @@ public class ZabDeny extends SendableEvent {
 		super();
 	}
 	
-	public ZabDeny(Channel channel, Session source)
+	public ZabDeny(Channel channel, int dir, Session source)
 			throws AppiaEventException {
-		super(channel, Direction.DOWN, source);
+		super(channel, dir, source);
 	}
 }

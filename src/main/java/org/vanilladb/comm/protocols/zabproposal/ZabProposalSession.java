@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 import org.vanilladb.comm.process.ProcessList;
 import org.vanilladb.comm.process.ProcessState;
 import org.vanilladb.comm.protocols.events.ProcessListInit;
-import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
+import org.vanilladb.comm.protocols.tcpfd.ProcessConnected;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderMessages;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderRequest;
 import org.vanilladb.comm.protocols.zabacceptance.ZabAccept;
@@ -53,8 +53,8 @@ public class ZabProposalSession extends Session {
 	public void handle(Event event) {
 		if (event instanceof ProcessListInit)
 			handleProcessListInit((ProcessListInit) event);
-		else if (event instanceof AllProcessesReady)
-			handleAllProcessesReady((AllProcessesReady) event);
+		else if (event instanceof ProcessConnected)
+			handleProcessConnected((ProcessConnected) event);
 		else if (event instanceof LeaderInit)
 			handleLeaderInit((LeaderInit) event);
 		else if (event instanceof LeaderChanged)
@@ -86,14 +86,9 @@ public class ZabProposalSession extends Session {
 		}
 	}
 	
-	private void handleAllProcessesReady(AllProcessesReady event) {
+	private void handleProcessConnected(ProcessConnected event) {
 		if (logger.isLoggable(Level.FINE))
-			logger.fine("Received AllProcessesReady");
-		
-		// Set all process states to correct
-		for (int i = 0; i < processList.getSize(); i++) {
-			processList.getProcess(i).setState(ProcessState.CORRECT);
-		}
+			logger.fine("Received ProcessConnected");
 		
 		// Let the event continue
 		try {
@@ -101,6 +96,10 @@ public class ZabProposalSession extends Session {
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		}
+		
+		// Set the connected process ready
+		processList.getProcess(event.getConnectedProcessId())
+				.setState(ProcessState.CORRECT);
 	}
 	
 	private void handleLeaderInit(LeaderInit event) {
