@@ -12,11 +12,10 @@ public class TcpFailureDetectionLayer extends Layer {
 	public TcpFailureDetectionLayer() {
 		// Events that the protocol will create
 		evProvide = new Class[] {
+			Heartbeat.class,
+			NextHeartbeat.class,
 			FailureDetected.class,
-			FdHello.class,
-			FdHelloAck.class,
 			AllProcessesReady.class,
-			FdHelloRetry.class
 		};
 		
 		// Events that the protocol requires to work
@@ -24,17 +23,16 @@ public class TcpFailureDetectionLayer extends Layer {
 		evRequire = new Class[] {
 			ProcessListInit.class,
 			RegisterSocketEvent.class,
-			TcpUndeliveredEvent.class
+			TcpUndeliveredEvent.class,
 		};
 		
 		// Events that the protocol will accept
 		evAccept = new Class[] {
 			ProcessListInit.class,
 			RegisterSocketEvent.class,
-			FdHello.class,
-			FdHelloAck.class,
+			Heartbeat.class,
+			NextHeartbeat.class,
 			TcpUndeliveredEvent.class,
-			FdHelloRetry.class
 		};
 	}
 
