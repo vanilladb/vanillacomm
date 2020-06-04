@@ -16,8 +16,8 @@ import org.vanilladb.comm.protocols.events.ProcessListInit;
 import org.vanilladb.comm.protocols.floodingcons.ConsensusRequest;
 import org.vanilladb.comm.protocols.floodingcons.ConsensusResult;
 import org.vanilladb.comm.protocols.rb.MessageId;
-import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
 import org.vanilladb.comm.protocols.tcpfd.FailureDetected;
+import org.vanilladb.comm.protocols.tcpfd.ProcessConnected;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
@@ -53,8 +53,8 @@ public class TotalOrderBroadcastSession extends Session {
 	public void handle(Event event) {
 		if (event instanceof ProcessListInit)
 			handleProcessListInit((ProcessListInit) event);
-		else if (event instanceof AllProcessesReady)
-			handleAllProcessesReady((AllProcessesReady) event);
+		else if (event instanceof ProcessConnected)
+			handleProcessConnected((ProcessConnected) event);
 		else if (event instanceof FailureDetected)
 			handleFailureDetected((FailureDetected) event);
 		else if (event instanceof TotalOrderBroadcast) {
@@ -82,14 +82,9 @@ public class TotalOrderBroadcastSession extends Session {
 		}
 	}
 	
-	private void handleAllProcessesReady(AllProcessesReady event) {
+	private void handleProcessConnected(ProcessConnected event) {
 		if (logger.isLoggable(Level.FINE))
-			logger.fine("Received AllProcessesReady");
-		
-		// Set all process states to correct
-		for (int i = 0; i < processList.getSize(); i++) {
-			processList.getProcess(i).setState(ProcessState.CORRECT);
-		}
+			logger.fine("Received ProcessConnected");
 		
 		// Let the event continue
 		try {
@@ -97,6 +92,10 @@ public class TotalOrderBroadcastSession extends Session {
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		}
+		
+		// Set the connected process ready
+		processList.getProcess(event.getConnectedProcessId())
+				.setState(ProcessState.CORRECT);
 	}
 	
 	private void handleFailureDetected(FailureDetected event) {

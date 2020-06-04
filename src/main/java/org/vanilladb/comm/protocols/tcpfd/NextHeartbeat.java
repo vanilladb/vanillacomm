@@ -8,9 +8,9 @@ import net.sf.appia.core.EventQualifier;
 import net.sf.appia.core.Session;
 import net.sf.appia.core.events.channel.Timer;
 
-public class FdHelloRetry extends Timer {
+public class NextHeartbeat extends Timer {
 	
-	public FdHelloRetry(long waitingTime, String timerID,
+	public NextHeartbeat(long waitingTime, String timerID,
 			Channel channel, Session source)
 			throws AppiaEventException, AppiaException {
 		super(waitingTime, timerID, channel,

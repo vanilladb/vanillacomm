@@ -8,8 +8,8 @@ import org.vanilladb.comm.process.ProcessList;
 import org.vanilladb.comm.process.ProcessState;
 import org.vanilladb.comm.process.ProcessStateListener;
 import org.vanilladb.comm.protocols.events.ProcessListInit;
-import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
 import org.vanilladb.comm.protocols.tcpfd.FailureDetected;
+import org.vanilladb.comm.protocols.tcpfd.ProcessConnected;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Direction;
@@ -43,8 +43,8 @@ public class TotalOrderApplicationSession extends Session {
 	public void handle(Event event) {
 		if (event instanceof ChannelInit)
 			handleChannelInit((ChannelInit) event);
-		else if (event instanceof AllProcessesReady)
-			handleAllProcessesReady((AllProcessesReady) event);
+		else if (event instanceof ProcessConnected)
+			handleProcessConnected((ProcessConnected) event);
 		else if (event instanceof RegisterSocketEvent)
 			handleRegisterSocketEvent((RegisterSocketEvent) event);
 		else if (event instanceof FailureDetected)
@@ -84,17 +84,24 @@ public class TotalOrderApplicationSession extends Session {
 		}
 	}
 	
-	private void handleAllProcessesReady(AllProcessesReady event) {
+	private void handleProcessConnected(ProcessConnected event) {
 		if (logger.isLoggable(Level.FINE))
-			logger.fine("Received AllProcessesReady");
+			logger.fine("Received ProcessConnected");
 		
-		// Set all process states to correct
-		for (int i = 0; i < processList.getSize(); i++) {
-			processList.getProcess(i).setState(ProcessState.CORRECT);
+		// Let the event continue
+		try {
+			event.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
 		}
 		
-		// Notify the listener
-		procListener.onAllProcessesReady();
+		// Set the connected process ready
+		processList.getProcess(event.getConnectedProcessId())
+				.setState(ProcessState.CORRECT);
+		
+		// Notify the listener when all the processes are ready
+		if (processList.areAllCorrect())
+			procListener.onAllProcessesReady();
 	}
 	
 	private void handleRegisterSocketEvent(RegisterSocketEvent event) {
