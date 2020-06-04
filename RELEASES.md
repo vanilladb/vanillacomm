@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 0.2.2 (2020-06-04)
+
+### Bug Fixes
+
+- Add heartbeat signals to the failure detection layer in order to prevent disconnection due to TCP timeout.
+
 ## Version 0.2.1 (2020-05-14)
 
 ### Bug Fixes
