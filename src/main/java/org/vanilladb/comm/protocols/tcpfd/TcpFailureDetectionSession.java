@@ -120,6 +120,11 @@ public class TcpFailureDetectionSession extends Session {
 		
 		// Record when the heartbeat is received
 		CommProcess process = processList.getProcess((SocketAddress) event.source);
+		if (process == null) {
+			if (logger.isLoggable(Level.WARNING))
+				logger.warning("Unreconized source " + event.source);
+			return;
+		}
 		lastReceived.put(process.getId(), System.currentTimeMillis());
 		
 		// If the process has not been initialized
@@ -150,12 +155,13 @@ public class TcpFailureDetectionSession extends Session {
 				return;
 			
 			if (!processList.getProcess(processId).isInitialized()) {
-				if (logger.isLoggable(Level.SEVERE))
-					logger.severe("Cannot deliver messages to processs " + event.getFailedAddress()
+				if (logger.isLoggable(Level.WARNING))
+					logger.warning("Cannot deliver messages to processs " + event.getFailedAddress()
 							+ ". Retry later.");
 			} else if (processList.getProcess(processId).isCorrect()) {
-				if (logger.isLoggable(Level.SEVERE))
-					logger.severe("Detected failed processs " + event.getFailedAddress() + " due to TCP undelivered.");
+				if (logger.isLoggable(Level.WARNING))
+					logger.warning(String.format("Detected a failed process (id = %d, address = %s) due to TCP undelivered.",
+							processId, event.getFailedAddress()));
 				detectFailedProcess(processId);
 			}
 		} catch (AppiaEventException e) {
