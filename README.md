@@ -86,7 +86,7 @@ To use this project as a library, we highly recommand to link via Maven. Please 
 <dependency>
   <groupId>org.vanilladb</groupId>
   <artifactId>comm</artifactId>
-  <version>0.2.2</version>
+  <version>0.2.3</version>
 </dependency>
 ```
 

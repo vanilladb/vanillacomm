@@ -12,7 +12,6 @@ import org.vanilladb.comm.protocols.beb.BestEffortBroadcastLayer;
 import org.vanilladb.comm.protocols.p2pappl.P2pApplicationLayer;
 import org.vanilladb.comm.protocols.p2pappl.P2pMessage;
 import org.vanilladb.comm.protocols.p2pappl.P2pMessageListener;
-import org.vanilladb.comm.protocols.p2pcounting.P2pCountingLayer;
 import org.vanilladb.comm.protocols.tcpfd.TcpFailureDetectionLayer;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderApplicationLayer;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderMessageListener;
@@ -43,7 +42,7 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 	private VanillaCommServerListener listener;
 	private Channel zabChannel;
 	private Channel p2pChannel;
-	private Session commonTcpSession, commonFdSession;
+	private Session commonTcpSession;
 	
 	public VanillaCommServer(int selfId, VanillaCommServerListener listener) {
 		int globalSelfId = ProcessView.toGlobalId(ProcessType.SERVER, selfId);
@@ -133,9 +132,6 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 		
 		layer = new TcpCompleteLayer();
 		commonTcpSession = layer.createSession();
-		
-		layer = new TcpFailureDetectionLayer();
-		commonFdSession = layer.createSession();
 	}
 	
 	private void setupZabChannel(int globalSelfId) {
@@ -159,8 +155,6 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 				ChannelCursor cc = zabChannel.getCursor();
 				cc.bottom();
 				cc.setSession(commonTcpSession);
-				cc.up();
-				cc.setSession(commonFdSession);
 			} catch (AppiaCursorException ex) {
 				ex.printStackTrace();
 			}
@@ -179,7 +173,6 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 			ProcessList processList = ProcessView.buildAllProcessList(globalSelfId);
 			Layer[] layers = new Layer[] {
 				new TcpCompleteLayer(),
-				new TcpFailureDetectionLayer(),
 				new P2pApplicationLayer(this, processList, false)
 			};
 			QoS qos = new QoS("P2P QoS", layers);
@@ -190,8 +183,6 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 				ChannelCursor cc = p2pChannel.getCursor();
 				cc.bottom();
 				cc.setSession(commonTcpSession);
-				cc.up();
-				cc.setSession(commonFdSession);
 			} catch (AppiaCursorException ex) {
 				ex.printStackTrace();
 			}
