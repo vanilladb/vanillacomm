@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 0.2.4 (2021-06-13)
+
+### Bug Fixes
+
+- Fix the concurrency bugs in Appia (which is included in Appia-Core).
+
 ## Version 0.2.3 (2021-06-13)
 
 ### Enhancements
