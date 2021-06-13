@@ -8,7 +8,6 @@ import org.vanilladb.comm.process.ProcessList;
 import org.vanilladb.comm.protocols.p2pappl.P2pApplicationLayer;
 import org.vanilladb.comm.protocols.p2pappl.P2pMessage;
 import org.vanilladb.comm.protocols.p2pappl.P2pMessageListener;
-import org.vanilladb.comm.protocols.tcpfd.TcpFailureDetectionLayer;
 import org.vanilladb.comm.view.ProcessType;
 import org.vanilladb.comm.view.ProcessView;
 
@@ -73,7 +72,6 @@ public class VanillaCommClient implements P2pMessageListener, Runnable {
 			ProcessList processList = ProcessView.buildAllProcessList(globalSelfId);
 			Layer[] layers = new Layer[] {
 				new TcpCompleteLayer(),
-				new TcpFailureDetectionLayer(),
 				new P2pApplicationLayer(this, processList, true)
 			};
 			QoS qos = new QoS("P2P QoS", layers);
