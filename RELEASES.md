@@ -1,5 +1,12 @@
 # Release Notes
 
+## Version 0.2.3 (2021-06-13)
+
+### Enhancements
+
+- Add a message to identify the unrecognized sources in the failure detection layer.
+- Remove failure detection layer from P2P channels to reduce the number of exchange messages.
+
 ## Version 0.2.2 (2020-06-04)
 
 ### Bug Fixes
