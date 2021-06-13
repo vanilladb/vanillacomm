@@ -11,7 +11,7 @@
 
 	<groupId>org.vanilladb</groupId>
 	<artifactId>comm</artifactId>
-	<version>0.1.1</version>
+	<version>0.2.3</version>
 	<packaging>jar</packaging>
 
 	<name>vanillacomm</name>
@@ -67,19 +67,31 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
+	<repositories>
+		<!-- This is for Appia -->
+		<repository>
+			<id>in-project-repo</id>
+			<url>file://${basedir}/lib</url>
+		</repository>
+	</repositories>
+
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.9</version>
+			<version>4.13.1</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>appia</groupId>
-			<artifactId>appia</artifactId>
-			<version>4.1.2</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/lib/appia-4.1.2.jar</systemPath>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.17</version>
+		</dependency>
+		<!-- We use the Appia that we optimized for VanillaComm -->
+		<dependency>
+			<groupId>net.sf.appia</groupId>
+			<artifactId>core</artifactId>
+			<version>4.1.2-vanilladb</version>
 		</dependency>
 	</dependencies>
 
@@ -108,64 +120,58 @@
 				</configuration>
 			</plugin>
 
-			<!-- Copy the properties files to a different directory -->
+			<!-- Demo Execution -->
 			<plugin>
-				<artifactId>maven-resources-plugin</artifactId>
-				<version>3.0.1</version>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.6.0</version>
+				<configuration>
+					<systemProperties>
+						<systemProperty>
+							<key>java.util.logging.config.file</key>
+							<value>target/classes/java/util/logging/logging.properties</value>
+						</systemProperty>
+						<systemProperty>
+							<key>org.vanilladb.comm.config.file</key>
+							<value>target/classes/org/vanilladb/comm/vanillacomm.properties</value>
+						</systemProperty>
+					</systemProperties>
+				</configuration>
 				<executions>
 					<execution>
-						<id>copy-resources</id>
-						<phase>validate</phase>
-						<goals>
-							<goal>copy-resources</goal>
-						</goals>
+						<id>server-demo</id>
 						<configuration>
-							<outputDirectory>${basedir}/target/properties</outputDirectory>
-							<resources>
-								<resource>
-									<directory>src/main/resources</directory>
-									<filtering>true</filtering>
-								</resource>
-							</resources>
+							<mainClass>org.vanilladb.comm.server.ServerDemo</mainClass>
+						</configuration>
+					</execution>
+					<execution>
+						<id>client-demo</id>
+						<configuration>
+							<mainClass>org.vanilladb.comm.client.ClientDemo</mainClass>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 
-			<!-- Package with dependencies -->
+			<!-- Generate a single jar with Appia -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.2.0</version>
 				<executions>
 					<execution>
-						<id>copy-dependencies</id>
-						<phase>prepare-package</phase>
+						<phase>package</phase>
 						<goals>
-							<goal>copy-dependencies</goal>
+							<goal>shade</goal>
 						</goals>
-						<configuration>
-							<outputDirectory>${project.build.directory}/classes/lib</outputDirectory>
-							<overWriteReleases>false</overWriteReleases>
-							<overWriteSnapshots>false</overWriteSnapshots>
-							<overWriteIfNewer>true</overWriteIfNewer>
-						</configuration>
 					</execution>
 				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
-					<archive>
-						<manifest>
-							<addClasspath>true</addClasspath>
-							<!-- <classpathPrefix>lib</classpathPrefix> -->
-							<!-- <mainClass>test.org.Cliente</mainClass> -->
-						</manifest>
-						<manifestEntries>
-							<Class-Path>lib/</Class-Path>
-						</manifestEntries>
-					</archive>
+					<artifactSet>
+						<includes>
+							<include>net.sf.appia:core</include>
+						</includes>
+					</artifactSet>
 				</configuration>
 			</plugin>
 
