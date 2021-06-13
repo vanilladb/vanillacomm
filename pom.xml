@@ -91,7 +91,7 @@
 		<dependency>
 			<groupId>net.sf.appia</groupId>
 			<artifactId>core</artifactId>
-			<version>4.1.2-vanilladb</version>
+			<version>4.1.2-vanilladb-v1</version>
 		</dependency>
 	</dependencies>
 
