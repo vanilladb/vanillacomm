@@ -6,10 +6,11 @@ import java.util.logging.Logger;
 import org.vanilladb.comm.process.ProcessList;
 import org.vanilladb.comm.process.ProcessState;
 import org.vanilladb.comm.protocols.events.ProcessListInit;
-import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
 import org.vanilladb.comm.protocols.tcpfd.FailureDetected;
+import org.vanilladb.comm.protocols.tcpfd.ProcessConnected;
 
 import net.sf.appia.core.AppiaEventException;
+import net.sf.appia.core.Channel;
 import net.sf.appia.core.Event;
 import net.sf.appia.core.Layer;
 import net.sf.appia.core.Session;
@@ -29,8 +30,8 @@ public class ZabElectionSession extends Session {
 	public void handle(Event event) {
 		if (event instanceof ProcessListInit)
 			handleProcessListInit((ProcessListInit) event);
-		else if (event instanceof AllProcessesReady)
-			handleAllProcessesReady((AllProcessesReady) event);
+		else if (event instanceof ProcessConnected)
+			handleProcessConnected((ProcessConnected) event);
 		else if (event instanceof FailureDetected)
 			handleFailureDetected((FailureDetected) event);
 	}
@@ -50,14 +51,9 @@ public class ZabElectionSession extends Session {
 		}
 	}
 	
-	private void handleAllProcessesReady(AllProcessesReady event) {
+	private void handleProcessConnected(ProcessConnected event) {
 		if (logger.isLoggable(Level.FINE))
-			logger.fine("Received AllProcessesReady");
-		
-		// Set all process states to correct
-		for (int i = 0; i < processList.getSize(); i++) {
-			processList.getProcess(i).setState(ProcessState.CORRECT);
-		}
+			logger.fine("Received ProcessConnected");
 		
 		// Let the event continue
 		try {
@@ -66,17 +62,13 @@ public class ZabElectionSession extends Session {
 			e.printStackTrace();
 		}
 		
-		// Set the first leader
-		leaderId = processList.getSize() - 1;
+		// Set the connected process ready
+		processList.getProcess(event.getConnectedProcessId())
+				.setState(ProcessState.CORRECT);
 		
-		// Send a leader init event
-		try {
-			LeaderInit init = new LeaderInit(event.getChannel(), this, leaderId);
-			init.init();
-			init.go();
-		} catch (AppiaEventException e) {
-			e.printStackTrace();
-		}
+		// Initialize when all processes are ready
+		if (processList.areAllCorrect())
+			setFirstLeader(event.getChannel());
 	}
 	
 	private void handleFailureDetected(FailureDetected event) {
@@ -106,6 +98,23 @@ public class ZabElectionSession extends Session {
 			} catch (AppiaEventException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+	
+	private void setFirstLeader(Channel channel) {
+		// Set the first leader
+		leaderId = processList.getSize() - 1;
+		
+		if (logger.isLoggable(Level.FINE))
+			logger.fine("Initialize with leaderId = " + leaderId);
+		
+		// Send a leader init event
+		try {
+			LeaderInit init = new LeaderInit(channel, this, leaderId);
+			init.init();
+			init.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
 		}
 	}
 	

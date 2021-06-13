@@ -86,7 +86,7 @@ To use this project as a library, we highly recommand to link via Maven. Please 
 <dependency>
   <groupId>org.vanilladb</groupId>
   <artifactId>comm</artifactId>
-  <version>0.2.1</version>
+  <version>0.2.4</version>
 </dependency>
 ```
 
@@ -141,6 +141,6 @@ If you have any question, you can either open an issue here or contact [vanillad
 
 ## License
 
-Copyright 2016-2020 vanilladb.org contributors
+Copyright 2016-2021 vanilladb.org contributors
 
 Licensed under the [Apache License 2.0](LICENSE)

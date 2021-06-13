@@ -107,6 +107,10 @@ public class P2pCountingSession extends Session {
 			count.incrementAndGet();
 		}
 		
+		// Debug: detect self-destination event
+//		if (event.dest.equals(processList.getSelfProcess().getAddress()))
+//			throw new RuntimeException("Self sent from " + event.getSourceSession().getClass().getSimpleName());
+		
 		// Record the type
 		String name = event.getClass().getSimpleName();
 		AtomicInteger count = types.get(name);

@@ -3,8 +3,8 @@ package org.vanilladb.comm.protocols.totalorderappl;
 import org.vanilladb.comm.process.ProcessList;
 import org.vanilladb.comm.process.ProcessStateListener;
 import org.vanilladb.comm.protocols.events.ProcessListInit;
-import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
 import org.vanilladb.comm.protocols.tcpfd.FailureDetected;
+import org.vanilladb.comm.protocols.tcpfd.ProcessConnected;
 
 import net.sf.appia.core.Layer;
 import net.sf.appia.core.Session;
@@ -37,13 +37,13 @@ public class TotalOrderApplicationLayer extends Layer {
 		// This is a subset of the accepted events
 		evRequire = new Class[] {
 			ChannelInit.class,
-			AllProcessesReady.class,
+			ProcessConnected.class,
 		};
 		
 		// Events that the protocol will accept
 		evAccept = new Class[] {
 			ChannelInit.class,
-			AllProcessesReady.class,
+			ProcessConnected.class,
 			RegisterSocketEvent.class,
 			FailureDetected.class,
 			TotalOrderMessages.class

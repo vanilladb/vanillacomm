@@ -1,13 +1,14 @@
 package org.vanilladb.comm.protocols.zabacceptance;
 
+import java.net.SocketAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.vanilladb.comm.process.ProcessList;
 import org.vanilladb.comm.process.ProcessState;
 import org.vanilladb.comm.protocols.events.ProcessListInit;
-import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
 import org.vanilladb.comm.protocols.tcpfd.FailureDetected;
+import org.vanilladb.comm.protocols.tcpfd.ProcessConnected;
 import org.vanilladb.comm.protocols.zabelection.LeaderChanged;
 import org.vanilladb.comm.protocols.zabproposal.ZabProposal;
 import org.vanilladb.comm.protocols.zabproposal.ZabProposalId;
@@ -35,8 +36,8 @@ public class ZabAcceptanceSession extends Session {
 	public void handle(Event event) {
 		if (event instanceof ProcessListInit)
 			handleProcessListInit((ProcessListInit) event);
-		if (event instanceof AllProcessesReady)
-			handleAllProcessesReady((AllProcessesReady) event);
+		else if (event instanceof ProcessConnected)
+			handleProcessConnected((ProcessConnected) event);
 		else if (event instanceof FailureDetected)
 			handleFailureDetected((FailureDetected) event);
 		else if (event instanceof LeaderChanged)
@@ -60,14 +61,9 @@ public class ZabAcceptanceSession extends Session {
 		}
 	}
 	
-	private void handleAllProcessesReady(AllProcessesReady event) {
+	private void handleProcessConnected(ProcessConnected event) {
 		if (logger.isLoggable(Level.FINE))
-			logger.fine("Received AllProcessesReady");
-		
-		// Set all process states to correct
-		for (int i = 0; i < processList.getSize(); i++) {
-			processList.getProcess(i).setState(ProcessState.CORRECT);
-		}
+			logger.fine("Received ProcessConnected");
 		
 		// Let the event continue
 		try {
@@ -75,6 +71,10 @@ public class ZabAcceptanceSession extends Session {
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		}
+		
+		// Set the connected process ready
+		processList.getProcess(event.getConnectedProcessId())
+				.setState(ProcessState.CORRECT);
 	}
 	
 	private void handleFailureDetected(FailureDetected event) {
@@ -127,6 +127,8 @@ public class ZabAcceptanceSession extends Session {
 			} else { // Broadcast messages from network
 				ZabProposal proposal = (ZabProposal) event.getMessage().popObject();
 				ZabProposalId id = proposal.getId();
+				int senderId = processList.getId((SocketAddress) event.source);
+				int direction = (processList.getSelfId() == senderId)? Direction.UP : Direction.DOWN;
 				
 				if (logger.isLoggable(Level.FINE))
 					logger.fine(String.format("Received ZabPropose from network (epoch id: %d, proposal serial #: %d)",
@@ -141,7 +143,7 @@ public class ZabAcceptanceSession extends Session {
 					cache.go();
 					
 					// Accept the proposal
-					ZabAccept accept = new ZabAccept(event.getChannel(), this);
+					ZabAccept accept = new ZabAccept(event.getChannel(), direction, this);
 					accept.getMessage().pushObject(id);
 					accept.source = processList.getSelfProcess().getAddress();
 					accept.dest = event.source;
@@ -153,7 +155,7 @@ public class ZabAcceptanceSession extends Session {
 								id.getEpochId(), id.getSerialNumber()));
 				} else {
 					// Deny the proposal
-					ZabDeny deny = new ZabDeny(event.getChannel(), this);
+					ZabDeny deny = new ZabDeny(event.getChannel(), direction, this);
 					deny.getMessage().pushObject(id);
 					deny.source = processList.getSelfProcess().getAddress();
 					deny.dest = event.source;

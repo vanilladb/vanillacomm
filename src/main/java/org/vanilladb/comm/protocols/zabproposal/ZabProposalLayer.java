@@ -1,7 +1,7 @@
 package org.vanilladb.comm.protocols.zabproposal;
 
 import org.vanilladb.comm.protocols.events.ProcessListInit;
-import org.vanilladb.comm.protocols.tcpfd.AllProcessesReady;
+import org.vanilladb.comm.protocols.tcpfd.ProcessConnected;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderMessages;
 import org.vanilladb.comm.protocols.totalorderappl.TotalOrderRequest;
 import org.vanilladb.comm.protocols.zabacceptance.ZabAccept;
@@ -28,7 +28,7 @@ public class ZabProposalLayer extends Layer {
 		// This is a subset of the accepted events
 		evRequire = new Class[] {
 			ProcessListInit.class,
-			AllProcessesReady.class,
+			ProcessConnected.class,
 			LeaderInit.class,
 			TotalOrderRequest.class,
 			ZabCacheProposal.class,
@@ -39,7 +39,7 @@ public class ZabProposalLayer extends Layer {
 		// Events that the protocol will accept
 		evAccept = new Class[] {
 			ProcessListInit.class,
-			AllProcessesReady.class,
+			ProcessConnected.class,
 			LeaderInit.class,
 			LeaderChanged.class,
 			TotalOrderRequest.class,

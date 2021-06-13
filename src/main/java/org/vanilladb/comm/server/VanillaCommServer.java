@@ -32,8 +32,8 @@ import net.sf.appia.core.ChannelCursor;
 import net.sf.appia.core.Direction;
 import net.sf.appia.core.Layer;
 import net.sf.appia.core.QoS;
+import net.sf.appia.core.Session;
 import net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer;
-import net.sf.appia.protocols.tcpcomplete.TcpCompleteSession;
 
 public class VanillaCommServer implements P2pMessageListener, ProcessStateListener,
 		TotalOrderMessageListener, Runnable {
@@ -42,12 +42,14 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 	private VanillaCommServerListener listener;
 	private Channel zabChannel;
 	private Channel p2pChannel;
+	private Session commonTcpSession;
 	
 	public VanillaCommServer(int selfId, VanillaCommServerListener listener) {
 		int globalSelfId = ProcessView.toGlobalId(ProcessType.SERVER, selfId);
 		this.listener = listener;
-		TcpCompleteSession tcpSession = setupZabChannel(globalSelfId);
-		setupP2pChannel(globalSelfId, tcpSession);
+		createCommonSessions();
+		setupZabChannel(globalSelfId);
+		setupP2pChannel(globalSelfId);
 		
 		// Disable Log4j Logging which is the default logger of Appia
 		org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.OFF);
@@ -125,15 +127,20 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 		return ProcessView.CLIENT_COUNT;
 	}
 	
-	private TcpCompleteSession setupZabChannel(int globalSelfId) {
-		TcpCompleteSession tcpSession = null;
+	private void createCommonSessions() {
+		Layer layer; 
 		
+		layer = new TcpCompleteLayer();
+		commonTcpSession = layer.createSession();
+	}
+	
+	private void setupZabChannel(int globalSelfId) {
 		try {
 			ProcessList processList = ProcessView.buildServersProcessList(globalSelfId);
 			Layer[] layers = new Layer[] {
 				new TcpCompleteLayer(),
-//				new P2pCountingLayer(),
 				new TcpFailureDetectionLayer(),
+//				new P2pCountingLayer(), // Debug Layer
 				new BestEffortBroadcastLayer(),
 				new ZabElectionLayer(),
 				new ZabAcceptanceLayer(),
@@ -143,12 +150,11 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 			QoS qos = new QoS("Zab QoS", layers);
 			zabChannel = qos.createUnboundChannel("Zab Channel");
 			
-			// We have to reuse this session
-			tcpSession = (TcpCompleteSession) layers[0].createSession();
+			// Set common sessions
 			try {
 				ChannelCursor cc = zabChannel.getCursor();
 				cc.bottom();
-				cc.setSession(tcpSession);
+				cc.setSession(commonTcpSession);
 			} catch (AppiaCursorException ex) {
 				ex.printStackTrace();
 			}
@@ -160,11 +166,9 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 		} catch (AppiaDuplicatedSessionsException e) {
 			e.printStackTrace();
 		}
-		
-		return tcpSession;
 	}
 	
-	private void setupP2pChannel(int globalSelfId, TcpCompleteSession tcpSession) {
+	private void setupP2pChannel(int globalSelfId) {
 		try {
 			ProcessList processList = ProcessView.buildAllProcessList(globalSelfId);
 			Layer[] layers = new Layer[] {
@@ -174,11 +178,11 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 			QoS qos = new QoS("P2P QoS", layers);
 			p2pChannel = qos.createUnboundChannel("P2P Channel");
 			
-			// Use the same TcpCompleteSession
+			// Set common sessions
 			try {
 				ChannelCursor cc = p2pChannel.getCursor();
 				cc.bottom();
-				cc.setSession(tcpSession);
+				cc.setSession(commonTcpSession);
 			} catch (AppiaCursorException ex) {
 				ex.printStackTrace();
 			}

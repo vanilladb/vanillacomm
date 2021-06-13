@@ -6,15 +6,15 @@ import net.sf.appia.core.Direction;
 import net.sf.appia.core.Session;
 import net.sf.appia.core.events.SendableEvent;
 
-public class FdHello extends SendableEvent {
+public class Heartbeat extends SendableEvent {
 	
 	// We must provide a public constructor for TcpCompleteSession
 	// in order to reconstruct this on the other side
-	public FdHello() {
+	public Heartbeat() {
 		super();
 	}
 			
-	public FdHello(Channel channel, Session src)
+	public Heartbeat(Channel channel, Session src)
 			throws AppiaEventException {
 		super(channel, Direction.DOWN, src);
 	}

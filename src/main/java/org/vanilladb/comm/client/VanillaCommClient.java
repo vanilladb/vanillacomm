@@ -31,6 +31,9 @@ public class VanillaCommClient implements P2pMessageListener, Runnable {
 		int globalSelfId = ProcessView.toGlobalId(ProcessType.CLIENT, selfId);
 		this.listener = listener;
 		setupP2pChannel(globalSelfId);
+		
+		// Disable Log4j Logging which is the default logger of Appia
+		org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.OFF);
 	}
 
 	@Override

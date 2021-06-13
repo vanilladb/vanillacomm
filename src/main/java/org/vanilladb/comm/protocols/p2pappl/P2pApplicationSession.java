@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.vanilladb.comm.process.ProcessList;
+import org.vanilladb.comm.protocols.events.ProcessListInit;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Direction;
@@ -67,6 +68,12 @@ public class P2pApplicationSession extends Session {
 				if (logger.isLoggable(Level.INFO))
 					logger.info("Socket registration request sent.");
 			}
+			
+			// Send process init
+			ProcessListInit processInit = new ProcessListInit(init.getChannel(),
+					this, new ProcessList(processList));
+			processInit.init();
+			processInit.go();
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		}
