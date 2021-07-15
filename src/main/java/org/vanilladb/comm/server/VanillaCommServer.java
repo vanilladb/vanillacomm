@@ -39,16 +39,28 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 		TotalOrderMessageListener, Runnable {
 	private static Logger logger = Logger.getLogger(VanillaCommServer.class.getName());
 	
+	public static int getServerCount() {
+		return ProcessView.SERVER_COUNT;
+	}
+	
+	public static int getClientCount() {
+		return ProcessView.CLIENT_COUNT;
+	}
+	
 	private VanillaCommServerListener listener;
 	private Channel zabChannel;
 	private Channel p2pChannel;
 	private Session commonTcpSession;
 	
 	public VanillaCommServer(int selfId, VanillaCommServerListener listener) {
+		this(selfId, listener, ProcessView.SERVER_COUNT - 1);
+	}
+	
+	public VanillaCommServer(int selfId, VanillaCommServerListener listener, int defaultZabLeaderId) {
 		int globalSelfId = ProcessView.toGlobalId(ProcessType.SERVER, selfId);
 		this.listener = listener;
 		createCommonSessions();
-		setupZabChannel(globalSelfId);
+		setupZabChannel(globalSelfId, defaultZabLeaderId);
 		setupP2pChannel(globalSelfId);
 		
 		// Disable Log4j Logging which is the default logger of Appia
@@ -119,14 +131,6 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 			listener.onServerFailed(ProcessView.toLocalId(failedProcessId));
 	}
 	
-	public int getServerCount() {
-		return ProcessView.SERVER_COUNT;
-	}
-	
-	public int getClientCount() {
-		return ProcessView.CLIENT_COUNT;
-	}
-	
 	private void createCommonSessions() {
 		Layer layer; 
 		
@@ -134,7 +138,7 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 		commonTcpSession = layer.createSession();
 	}
 	
-	private void setupZabChannel(int globalSelfId) {
+	private void setupZabChannel(int globalSelfId, int defaultZabLeaderId) {
 		try {
 			ProcessList processList = ProcessView.buildServersProcessList(globalSelfId);
 			Layer[] layers = new Layer[] {
@@ -142,7 +146,7 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 				new TcpFailureDetectionLayer(),
 //				new P2pCountingLayer(), // Debug Layer
 				new BestEffortBroadcastLayer(),
-				new ZabElectionLayer(),
+				new ZabElectionLayer(defaultZabLeaderId),
 				new ZabAcceptanceLayer(),
 				new ZabProposalLayer(),
 				new TotalOrderApplicationLayer(this, this, processList, true)

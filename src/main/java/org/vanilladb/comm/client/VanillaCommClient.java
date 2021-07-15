@@ -23,7 +23,15 @@ import net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer;
 
 public class VanillaCommClient implements P2pMessageListener, Runnable {
 	private static Logger logger = Logger.getLogger(VanillaCommClient.class.getName());
-
+	
+	public static int getServerCount() {
+		return ProcessView.SERVER_COUNT;
+	}
+	
+	public static int getClientCount() {
+		return ProcessView.CLIENT_COUNT;
+	}
+	
 	private VanillaCommClientListener listener;
 	private Channel p2pChannel;
 
@@ -57,14 +65,6 @@ public class VanillaCommClient implements P2pMessageListener, Runnable {
 	@Override
 	public void onRecvP2pMessage(int senderId, Serializable message) {
 		listener.onReceiveP2pMessage(ProcessView.toProcessType(senderId), ProcessView.toLocalId(senderId), message);
-	}
-	
-	public int getServerCount() {
-		return ProcessView.SERVER_COUNT;
-	}
-	
-	public int getClientCount() {
-		return ProcessView.CLIENT_COUNT;
 	}
 
 	private void setupP2pChannel(int globalSelfId) {
