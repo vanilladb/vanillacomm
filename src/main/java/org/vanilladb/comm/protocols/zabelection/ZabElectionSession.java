@@ -19,11 +19,14 @@ public class ZabElectionSession extends Session {
 	private static Logger logger = Logger.getLogger(ZabElectionSession.class.getName());
 	
 	private ProcessList processList;
+	private int defaultLeaderId;
 	private int leaderId;
 	private int epochId = 0;
 	
-	ZabElectionSession(Layer layer) {
+	ZabElectionSession(Layer layer, int defaultLeaderId) {
 		super(layer);
+		
+		this.defaultLeaderId = defaultLeaderId;
 	}
 	
 	@Override
@@ -103,7 +106,7 @@ public class ZabElectionSession extends Session {
 	
 	private void setFirstLeader(Channel channel) {
 		// Set the first leader
-		leaderId = processList.getSize() - 1;
+		leaderId = defaultLeaderId;
 		
 		if (logger.isLoggable(Level.FINE))
 			logger.fine("Initialize with leaderId = " + leaderId);
