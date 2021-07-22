@@ -1,5 +1,13 @@
 # Release Notes
 
+## Version 0.2.5 (2021-07-22)
+
+### API Changes
+
+- Change `getServerCount()` and `getClientCount()` in `VanillaCommClient` and `VanillaCommServer` from non-static methods to static methods.
+- Update the constructor of `ZabElectionLayer` so that we can give it a machine ID as the default Zab leader.
+- Add a constructor for `VanillaCommServer` so that we can set the default Zab leader.
+
 ## Version 0.2.4 (2021-06-13)
 
 ### Bug Fixes
