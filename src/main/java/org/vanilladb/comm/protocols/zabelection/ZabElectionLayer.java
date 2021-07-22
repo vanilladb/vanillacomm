@@ -9,7 +9,11 @@ import net.sf.appia.core.Session;
 
 public class ZabElectionLayer extends Layer {
 	
-	public ZabElectionLayer() {
+	private int defaultLeaderId;
+	
+	public ZabElectionLayer(int defaultLeaderId) {
+		this.defaultLeaderId = defaultLeaderId;
+		
 		// Events that the protocol will create
 		evProvide = new Class[] {
 			LeaderInit.class,
@@ -34,6 +38,6 @@ public class ZabElectionLayer extends Layer {
 
 	@Override
 	public Session createSession() {
-		return new ZabElectionSession(this);
+		return new ZabElectionSession(this, defaultLeaderId);
 	}
 }
