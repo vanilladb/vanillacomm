@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Tue Jan 04 16:22:28 CST 2022
+core-4.1.2-vanilladb-v2.jar>=
+core-4.1.2-vanilladb-v2.pom>=

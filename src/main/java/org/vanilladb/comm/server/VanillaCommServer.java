@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.logging.log4j.core.config.Configurator;
 import org.vanilladb.comm.process.ProcessList;
 import org.vanilladb.comm.process.ProcessStateListener;
 import org.vanilladb.comm.protocols.beb.BestEffortBroadcastLayer;
@@ -64,7 +65,7 @@ public class VanillaCommServer implements P2pMessageListener, ProcessStateListen
 		setupP2pChannel(globalSelfId);
 		
 		// Disable Log4j Logging which is the default logger of Appia
-		org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.OFF);
+		Configurator.setRootLevel(org.apache.logging.log4j.Level.OFF);
 	}
 
 	@Override
