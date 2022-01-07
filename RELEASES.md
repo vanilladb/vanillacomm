@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 0.2.6 (2022-01-06)
+
+### Security Issue
+
+- Bump log4j from 1.2.17 to 2.17.1 and adapt to the new log4j interface.
+
 ## Version 0.2.5 (2021-07-22)
 
 ### API Changes
